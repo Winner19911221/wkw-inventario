@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WKW Ventas e Instalaciones - Sistema de Gestión</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script type="module" crossorigin src="/assets/index-ChCoXJzf.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DERg5oit.css">
+</head>
+<body>
+
+  <!-- Sidebar / Barra Lateral -->
+  <aside class="sidebar">
+    <div class="logo-container">
+      <img src="/assets/logo-BEw-153h.png" alt="WKW Logo" class="sidebar-logo">
+    </div>
+    <ul>
+      <li id="menu-dashboard" class="active" onclick="mostrar('dashboard')">
+        <i class="fa-solid fa-chart-line"></i> Dashboard
+      </li>
+      <li id="menu-productos" onclick="mostrar('productos')">
+        <i class="fa-solid fa-box"></i> Productos
+      </li>
+      <li id="menu-clientes" onclick="mostrar('clientes')">
+        <i class="fa-solid fa-users"></i> Clientes
+      </li>
+      <li id="menu-cotizaciones" onclick="mostrar('cotizaciones')">
+        <i class="fa-solid fa-file-invoice-dollar"></i> Cotizaciones
+      </li>
+      <li id="menu-reportes" onclick="mostrar('reportes')">
+        <i class="fa-solid fa-chart-pie"></i> Reportes
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Contenido Principal -->
+  <main class="contenido">
+
+    <!-- Sección: Dashboard -->
+    <section id="dashboard" class="pagina">
+      <h1>Panel de Control</h1>
+      <p class="section-subtitle">Vista general del rendimiento del inventario y clientes.</p>
+
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon">
+            <i class="fa-solid fa-box-open"></i>
+          </div>
+          <div class="card-info">
+            <h3>Productos</h3>
+            <p id="totalProductos">0</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <div class="card-info">
+            <h3>Clientes</h3>
+            <p id="totalClientes">0</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">
+            <i class="fa-solid fa-file-signature"></i>
+          </div>
+          <div class="card-info">
+            <h3>Cotizaciones</h3>
+            <p id="totalCotizaciones">0</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-container" style="margin-top: 30px;">
+        <h2 style="font-size: 1.2rem; margin-bottom: 15px; color: #fff;"><i class="fa-solid fa-bolt" style="color: var(--accent);"></i> Accesos Rápidos</h2>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button onclick="mostrar('productos')"><i class="fa-solid fa-plus"></i> Gestionar Productos</button>
+          <button onclick="mostrar('clientes')"><i class="fa-solid fa-user-plus"></i> Gestionar Clientes</button>
+          <button onclick="mostrar('cotizaciones')"><i class="fa-solid fa-file-circle-plus"></i> Crear Cotización</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección: Productos -->
+    <section id="productos" class="pagina oculto">
+      <h1>Gestión de Productos</h1>
+      <p class="section-subtitle">Agrega, edita y administra tu catálogo de productos.</p>
+
+      <div class="form-container">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="nombreProducto">Nombre del Producto</label>
+            <input type="text" id="nombreProducto" placeholder="Ej: Laptop Asus ROG">
+          </div>
+          <div class="form-group">
+            <label for="precioProducto">Precio Unitario (RD$)</label>
+            <input type="number" id="precioProducto" placeholder="0.00" min="0" step="any">
+          </div>
+          <div class="form-group">
+            <label for="stockProducto">Stock Inicial</label>
+            <input type="number" id="stockProducto" placeholder="0" min="0">
+          </div>
+          <button onclick="agregarProducto()">
+            <i class="fa-solid fa-circle-plus"></i> Agregar
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Precio</th>
+              <th>Stock</th>
+              <th>Estado</th>
+              <th style="text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaProductos">
+            <!-- Dinámico desde JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Sección: Clientes -->
+    <section id="clientes" class="pagina oculto">
+      <h1>Clientes</h1>
+      <p class="section-subtitle">Administra los clientes de tu cartera comercial.</p>
+
+      <div class="form-container">
+        <div class="form-grid" style="grid-template-columns: 2fr 1fr;">
+          <div class="form-group">
+            <label for="nombreCliente">Nombre Completo</label>
+            <input type="text" id="nombreCliente" placeholder="Ej: Juan Pérez Martínez">
+          </div>
+          <button onclick="agregarCliente()">
+            <i class="fa-solid fa-user-plus"></i> Agregar Cliente
+          </button>
+        </div>
+      </div>
+
+      <ul id="listaClientes" class="modern-list">
+        <!-- Dinámico desde JS -->
+      </ul>
+    </section>
+
+    <!-- Sección: Cotizaciones -->
+    <section id="cotizaciones" class="pagina oculto">
+      <h1>Cotizaciones</h1>
+      <p class="section-subtitle">Genera cotizaciones formales para tus clientes registrados.</p>
+
+      <div class="quote-builder-container">
+        <!-- Columna Izquierda: Formulario e Items -->
+        <div class="quote-builder-form">
+          <!-- Cliente -->
+          <div class="form-container">
+            <h3 class="form-section-title"><i class="fa-solid fa-user" style="color: var(--accent);"></i> 1. Seleccionar Cliente</h3>
+            <div class="form-group" style="margin-top: 10px;">
+              <label for="clienteCotizacion">Cliente</label>
+              <select id="clienteCotizacion">
+                <option value="">Seleccione un cliente...</option>
+                <!-- Opciones dinámicas de clientes -->
+              </select>
+            </div>
+          </div>
+
+          <!-- Selector y carga de Conceptos -->
+          <div class="form-container" style="margin-top: 20px;">
+            <h3 class="form-section-title"><i class="fa-solid fa-cart-plus" style="color: var(--success);"></i> 2. Agregar Elementos</h3>
+            
+            <div class="tabs-conceptos">
+              <button id="tab-cat" class="tab-btn active" onclick="switchTab('catalogo')"><i class="fa-solid fa-box"></i> Catálogo</button>
+              <button id="tab-pers" class="tab-btn" onclick="switchTab('personalizado')"><i class="fa-solid fa-keyboard"></i> Personalizado</button>
+              <button id="tab-mano" class="tab-btn" onclick="switchTab('mano_obra')"><i class="fa-solid fa-wrench"></i> Mano de Obra</button>
+            </div>
+
+            <!-- Form 1: Catálogo -->
+            <div class="tab-content" id="form-catalogo">
+              <div class="form-grid-vertical">
+                <div class="form-group">
+                  <label for="prodCatSelect">Producto del Catálogo</label>
+                  <select id="prodCatSelect" onchange="seleccionarProductoCatalogo()">
+                    <option value="">Seleccione un producto...</option>
+                  </select>
+                </div>
+                
+                <div class="product-info-panel" id="prodInfoPanel" style="display: none;">
+                  <span class="info-badge price"><i class="fa-solid fa-tags"></i> Precio: <span id="prodInfoPrecio">RD$ 0.00</span></span>
+                  <span class="info-badge stock" id="prodInfoStockBadge"><i class="fa-solid fa-warehouse"></i> Stock: <span id="prodInfoStock">0</span> unidades</span>
+                </div>
+
+                <div class="form-grid-2col">
+                  <div class="form-group">
+                    <label for="prodCatCant">Cantidad</label>
+                    <input type="number" id="prodCatCant" value="1" min="1" oninput="validarCantCatalogo()">
+                  </div>
+                  <div class="form-group">
+                    <label for="prodCatPrecio">Precio Unitario (RD$)</label>
+                    <input type="number" id="prodCatPrecio" placeholder="0.00" min="0" step="any">
+                  </div>
+                </div>
+                
+                <button type="button" onclick="agregarItemCatalogo()" style="margin-top: 10px;">
+                  <i class="fa-solid fa-circle-plus"></i> Agregar Producto
+                </button>
+              </div>
+            </div>
+
+            <!-- Form 2: Personalizado -->
+            <div class="tab-content oculto" id="form-personalizado">
+              <div class="form-grid-vertical">
+                <div class="form-group">
+                  <label for="prodPersNombre">Nombre del Producto / Concepto</label>
+                  <input type="text" id="prodPersNombre" placeholder="Ej: Cable UTP Cat6 (m)">
+                </div>
+                <div class="form-grid-2col">
+                  <div class="form-group">
+                    <label for="prodPersCant">Cantidad</label>
+                    <input type="number" id="prodPersCant" value="1" min="1">
+                  </div>
+                  <div class="form-group">
+                    <label for="prodPersPrecio">Precio Unitario (RD$)</label>
+                    <input type="number" id="prodPersPrecio" placeholder="0.00" min="0" step="any">
+                  </div>
+                </div>
+                <button type="button" onclick="agregarItemPersonalizado()" style="margin-top: 10px;">
+                  <i class="fa-solid fa-circle-plus"></i> Agregar Item Personalizado
+                </button>
+              </div>
+            </div>
+
+            <!-- Form 3: Mano de Obra -->
+            <div class="tab-content oculto" id="form-mano_obra">
+              <div class="form-grid-vertical">
+                <div class="form-group">
+                  <label for="manoObraDesc">Descripción de la Mano de Obra</label>
+                  <input type="text" id="manoObraDesc" placeholder="Ej: Instalación de 4 cámaras y configuración de DVR">
+                </div>
+                <div class="form-group">
+                  <label for="manoObraCosto">Costo de la Mano de Obra (RD$)</label>
+                  <input type="number" id="manoObraCosto" placeholder="0.00" min="0" step="any">
+                </div>
+                <button type="button" onclick="agregarItemManoObra()" style="margin-top: 10px;">
+                  <i class="fa-solid fa-circle-plus"></i> Agregar Mano de Obra
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Detalle de Cotización -->
+        <div class="quote-builder-preview">
+          <div class="form-container" style="height: 100%; display: flex; flex-direction: column;">
+            <h3 class="form-section-title"><i class="fa-solid fa-file-invoice" style="color: var(--warning);"></i> 3. Resumen de la Cotización</h3>
+            
+            <div id="borradorEmptyMsg" style="text-align: center; color: var(--text-secondary); padding: 40px 10px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+              <i class="fa-solid fa-calculator" style="font-size: 2.5rem; color: var(--border-color); margin-bottom: 15px;"></i>
+              <p>Agrega productos o mano de obra para ver el desglose en esta sección.</p>
+            </div>
+
+            <div id="borradorDetalle" style="display: none; flex-grow: 1; flex-direction: column; justify-content: space-between;">
+              <div class="table-container" style="margin-top: 15px; margin-bottom: 15px; border-radius: 10px; max-height: 250px; overflow-y: auto;">
+                <table class="table-compact">
+                  <thead>
+                    <tr>
+                      <th>Concepto</th>
+                      <th style="text-align: center;">Cant</th>
+                      <th style="text-align: right;">Total</th>
+                      <th style="text-align: center;">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaBorradorItems">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Resumen de Totales -->
+              <div class="resumen-totales">
+                <div class="total-row">
+                  <span>Subtotal Productos:</span>
+                  <span id="totProd">RD$ 0.00</span>
+                </div>
+                <div class="total-row">
+                  <span>Mano de Obra:</span>
+                  <span id="totMano">RD$ 0.00</span>
+                </div>
+                <div class="total-row separator">
+                  <span>Subtotal Neto:</span>
+                  <span id="totNeto">RD$ 0.00</span>
+                </div>
+                <div class="total-row">
+                  <span style="display: flex; align-items: center; gap: 8px;">
+                    ITBIS (18%):
+                    <input type="checkbox" id="aplicarItbis" checked onchange="calcularTotalesBorrador()" style="width: auto; cursor: pointer; margin: 0;">
+                  </span>
+                  <span id="totItbis">RD$ 0.00</span>
+                </div>
+                <div class="total-row grand-total">
+                  <span>TOTAL GENERAL:</span>
+                  <span id="totGeneral">RD$ 0.00</span>
+                </div>
+              </div>
+
+              <!-- Botones de Acción -->
+              <div class="borrador-actions" style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button class="btn-danger" type="button" onclick="limpiarBorrador()">
+                  <i class="fa-solid fa-trash-can"></i> Limpiar
+                </button>
+                <button type="button" onclick="guardarCotizacionBorrador()" style="background-color: var(--success);">
+                  <i class="fa-solid fa-check"></i> Guardar Cotización
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2 style="font-size: 1.2rem; color: #fff; margin-top: 40px; margin-bottom: 15px;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--accent);"></i> Historial de Cotizaciones</h2>
+      <ul id="listaCotizaciones" class="modern-list">
+        <!-- Dinámico desde JS -->
+      </ul>
+    </section>
+
+    <!-- Sección: Reportes -->
+    <section id="reportes" class="pagina oculto">
+      <h1>Reportes & Estadísticas</h1>
+      <p class="section-subtitle">Métricas del negocio actualizadas en tiempo real.</p>
+
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon" style="background-color: var(--success-glow); color: var(--success);">
+            <i class="fa-solid fa-chart-line"></i>
+          </div>
+          <div class="card-info">
+            <h3>Total Productos</h3>
+            <p id="rProductos">0</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="background-color: var(--accent-glow); color: var(--accent);">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <div class="card-info">
+            <h3>Total Clientes</h3>
+            <p id="rClientes">0</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-icon" style="background-color: rgba(245, 158, 11, 0.1); color: var(--warning);">
+            <i class="fa-solid fa-hand-holding-dollar"></i>
+          </div>
+          <div class="card-info">
+            <h3>Valor Cotizado</h3>
+            <p id="rMontoTotal">RD$ 0.00</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-container">
+        <h2 style="font-size: 1.2rem; margin-bottom: 20px; color: #fff;"><i class="fa-solid fa-warehouse" style="color: var(--warning);"></i> Estado del Inventario</h2>
+        <div id="reporteInventario">
+          <!-- Detalles dinámicos como productos fuera de stock -->
+        </div>
+      </div>
+    </section>
+
+  <!-- Biblioteca jsPDF para descargas de PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</body>
+</html>
