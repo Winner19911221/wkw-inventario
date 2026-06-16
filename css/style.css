@@ -69,6 +69,7 @@ body {
   top: 0;
   z-index: 100;
   transition: var(--transition);
+  overflow-y: auto;
 }
 
 .logo-container {
@@ -80,7 +81,9 @@ body {
 
 .sidebar-logo {
   max-width: 100%;
+  max-height: 80px;
   height: auto;
+  object-fit: contain;
   border-radius: 12px;
   border: 1px solid var(--border-color);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
@@ -320,6 +323,18 @@ button.btn-danger:hover {
   background-color: var(--danger);
   color: #fff;
   box-shadow: 0 4px 15px var(--danger-glow);
+}
+
+button.btn-warning {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+button.btn-warning:hover {
+  background-color: var(--warning);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
 }
 
 /* Tablas Modernas */
@@ -832,7 +847,7 @@ table tbody tr:last-child td {
 .product-card-actions {
   margin-top: auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
   gap: 10px;
 }
 
@@ -852,4 +867,16 @@ table tbody tr:last-child td {
   background-color: var(--success);
   color: #fff;
   box-shadow: 0 4px 12px var(--success-glow);
+}
+
+.product-card-actions button.btn-warning {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.product-card-actions button.btn-warning:hover {
+  background-color: var(--warning);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
 }

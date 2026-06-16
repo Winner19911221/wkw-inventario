@@ -32,11 +32,43 @@
   <link rel="canonical" href="https://winner19911221.github.io/wkw-inventario/">
 
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/login.css">
   <link rel="stylesheet" href="css/whatsapp.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body>
+
+  <!-- Pantalla de Login -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="login-logo-wrap">
+        <img src="logo.png" alt="WKW Logo" class="login-logo">
+        <h2 class="login-title">WKW Security</h2>
+        <p class="login-subtitle">Accede al panel de inventario</p>
+      </div>
+      <form class="login-form" id="loginForm" onsubmit="handleLogin(event)">
+        <div class="login-field">
+          <i class="fa-solid fa-user field-icon"></i>
+          <input type="text" id="loginUser" placeholder="Usuario" autocomplete="username" autofocus>
+        </div>
+        <div class="login-field">
+          <i class="fa-solid fa-lock field-icon"></i>
+          <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password">
+          <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
+            <i class="fa-solid fa-eye" id="togglePassIcon"></i>
+          </button>
+        </div>
+        <div class="login-error" id="loginError">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span id="loginErrorMsg"></span>
+        </div>
+        <button type="submit" class="login-btn" id="loginBtn">
+          <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+        </button>
+      </form>
+    </div>
+  </div>
 
   <!-- Sidebar / Barra Lateral -->
   <aside class="sidebar">
@@ -44,22 +76,27 @@
       <img src="logo.png" alt="WKW Logo" class="sidebar-logo">
     </div>
     <ul>
-      <li id="menu-dashboard" class="active" onclick="mostrar('dashboard')">
+      <li id="menu-dashboard" class="active client-hidden" onclick="mostrar('dashboard')">
         <i class="fa-solid fa-chart-line"></i> Dashboard
       </li>
       <li id="menu-productos" onclick="mostrar('productos')">
         <i class="fa-solid fa-box"></i> Productos
       </li>
-      <li id="menu-clientes" onclick="mostrar('clientes')">
+      <li id="menu-clientes" class="client-hidden" onclick="mostrar('clientes')">
         <i class="fa-solid fa-users"></i> Clientes
       </li>
       <li id="menu-cotizaciones" onclick="mostrar('cotizaciones')">
         <i class="fa-solid fa-file-invoice-dollar"></i> Cotizaciones
       </li>
-      <li id="menu-reportes" onclick="mostrar('reportes')">
+      <li id="menu-reportes" class="client-hidden" onclick="mostrar('reportes')">
         <i class="fa-solid fa-chart-pie"></i> Reportes
       </li>
     </ul>
+
+    <!-- Información de sesión y logout -->
+    <div id="userSessionInfo" class="user-session-info">
+      <!-- Dinámico desde auth.js -->
+    </div>
   </aside>
 
   <!-- Contenido Principal -->
@@ -106,8 +143,8 @@
         <h2 style="font-size: 1.2rem; margin-bottom: 15px; color: #fff;"><i class="fa-solid fa-bolt"
             style="color: var(--accent);"></i> Accesos Rápidos</h2>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button onclick="mostrar('productos')"><i class="fa-solid fa-plus"></i> Gestionar Productos</button>
-          <button onclick="mostrar('clientes')"><i class="fa-solid fa-user-plus"></i> Gestionar Clientes</button>
+          <button class="admin-only" onclick="mostrar('productos')"><i class="fa-solid fa-plus"></i> Gestionar Productos</button>
+          <button class="admin-only" onclick="mostrar('clientes')"><i class="fa-solid fa-user-plus"></i> Gestionar Clientes</button>
 
           <a href="https://wa.me/8094393928?text=Hola,%20me%20gustar%C3%ADa%20recibir%20informaci%C3%B3n."
             target="_blank" class="whatsapp-link"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
@@ -133,7 +170,13 @@
         </div>
       </div>
 
-      <div class="form-container">
+      <!-- Aviso para usuarios con solo lectura -->
+      <div class="viewer-notice">
+        <i class="fa-solid fa-eye"></i>
+        <span>Modo solo lectura — no tienes permisos para modificar productos.</span>
+      </div>
+
+      <div class="form-container admin-only">
         <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
           <div class="form-group">
             <label for="nombreProducto">Nombre del Producto</label>
@@ -197,7 +240,13 @@
       <h1>Clientes</h1>
       <p class="section-subtitle">Administra los clientes de tu cartera comercial.</p>
 
-      <div class="form-container">
+      <!-- Aviso para usuarios con solo lectura -->
+      <div class="viewer-notice">
+        <i class="fa-solid fa-eye"></i>
+        <span>Modo solo lectura — no tienes permisos para modificar clientes.</span>
+      </div>
+
+      <div class="form-container admin-only">
         <div class="form-grid" style="grid-template-columns: 2fr 1fr;">
           <div class="form-group">
             <label for="nombreCliente">Nombre Completo</label>
@@ -219,19 +268,30 @@
       <h1>Cotizaciones</h1>
       <p class="section-subtitle">Genera cotizaciones formales para tus clientes registrados.</p>
 
+      <!-- Aviso para usuarios con solo lectura -->
+      <div class="viewer-notice">
+        <i class="fa-solid fa-eye"></i>
+        <span>Modo solo lectura — puedes crear cotizaciones del catálogo, pero no puedes modificar precios ni eliminar cotizaciones.</span>
+      </div>
+
       <div class="quote-builder-container">
         <!-- Columna Izquierda: Formulario e Items -->
         <div class="quote-builder-form">
           <!-- Cliente -->
           <div class="form-container">
-            <h3 class="form-section-title"><i class="fa-solid fa-user" style="color: var(--accent);"></i> 1. Seleccionar
-              Cliente</h3>
-            <div class="form-group" style="margin-top: 10px;">
+            <h3 class="form-section-title"><i class="fa-solid fa-user" style="color: var(--accent);"></i> 1. Seleccionar Cliente</h3>
+            <div class="form-group" style="margin-top: 10px;" id="clienteCotizacionContainer">
               <label for="clienteCotizacion">Cliente</label>
               <select id="clienteCotizacion">
                 <option value="">Seleccione un cliente...</option>
                 <!-- Opciones dinámicas de clientes -->
               </select>
+            </div>
+            <div class="form-group" style="margin-top: 10px; display: none;" id="clienteCotizacionReadonly">
+              <label>Cliente</label>
+              <div id="clienteNombreReadonly" style="padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border: 1px solid var(--border-color); color: #fff; font-weight: 500;">
+                Cliente
+              </div>
             </div>
           </div>
 
@@ -243,9 +303,9 @@
             <div class="tabs-conceptos">
               <button id="tab-cat" class="tab-btn active" onclick="switchTab('catalogo')"><i
                   class="fa-solid fa-box"></i> Catálogo</button>
-              <button id="tab-pers" class="tab-btn" onclick="switchTab('personalizado')"><i
+              <button id="tab-pers" class="tab-btn admin-only" onclick="switchTab('personalizado')"><i
                   class="fa-solid fa-keyboard"></i> Personalizado</button>
-              <button id="tab-mano" class="tab-btn" onclick="switchTab('mano_obra')"><i class="fa-solid fa-wrench"></i>
+              <button id="tab-mano" class="tab-btn admin-only" onclick="switchTab('mano_obra')"><i class="fa-solid fa-wrench"></i>
                 Mano de Obra</button>
             </div>
 

@@ -1,3 +1,5 @@
+import { login, logout, isAdmin, isLoggedIn, initAuth, applyRoleRestrictions, getSession } from './auth.js';
+
 // Inicialización del estado desde LocalStorage o arreglos vacíos
 const defaultImages = {
   camaras_ip: 'img/camara_ip.png',
@@ -161,6 +163,10 @@ function formatCurrency(monto) {
 // --- CRUD PRODUCTOS ---
 
 function agregarProducto() {
+  if (!isAdmin()) {
+    alert('No tienes permisos para agregar productos.');
+    return;
+  }
   const nombreInput = document.getElementById('nombreProducto');
   const precioInput = document.getElementById('precioProducto');
   const stockInput = document.getElementById('stockProducto');
@@ -210,6 +216,10 @@ function agregarProducto() {
 }
 
 function aumentarStock(id) {
+  if (!isAdmin()) {
+    alert('No tienes permisos para modificar el stock.');
+    return;
+  }
   const prod = productos.find(p => p.id === id);
   if (!prod) return;
   const incrementoStr = prompt('Ingrese la cantidad a agregar al stock:', '1');
@@ -222,7 +232,29 @@ function aumentarStock(id) {
   saveState();
 }
 
+function modificarPrecio(id) {
+  if (!isAdmin()) {
+    alert('No tienes permisos para modificar el precio.');
+    return;
+  }
+  const prod = productos.find(p => p.id === id);
+  if (!prod) return;
+  const nuevoPrecioStr = prompt(`Ingrese el nuevo precio para ${prod.nombre}:`, prod.precio);
+  if (nuevoPrecioStr === null) return;
+  const nuevoPrecio = parseFloat(nuevoPrecioStr);
+  if (isNaN(nuevoPrecio) || nuevoPrecio < 0) {
+    alert('Precio inválido.');
+    return;
+  }
+  prod.precio = nuevoPrecio;
+  saveState();
+}
+
 function eliminarProducto(id) {
+  if (!isAdmin()) {
+    alert('No tienes permisos para eliminar productos.');
+    return;
+  }
   console.log('eliminarProducto called with id:', id);
   if (confirm('¿Estás seguro de que deseas eliminar este producto?')) {
     console.log('User confirmed deletion');
@@ -299,17 +331,20 @@ function actualizarProductosTable() {
             </div>
           </div>
         </td>
-        <td>${formatCurrency(p.precio)}</td>
+        <td>
+          ${formatCurrency(p.precio)}
+          ${isAdmin() ? `<button class="btn-success" onclick="modificarPrecio('${p.id}')" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px;" title="Modificar Precio"><i class="fa-solid fa-dollar-sign"></i></button>` : ''}
+        </td>
         <td>
           ${p.stock} unidades
-          <button class="btn-success" onclick="aumentarStock('${p.id}')" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px;">+</button>
+          ${isAdmin() ? `<button class="btn-success" onclick="aumentarStock('${p.id}')" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px;">+</button>` : ''}
         </td>
         <td>${statusBadge}</td>
-        <td style="text-align: center;">
+        ${isAdmin() ? `<td style="text-align: center;">
           <button class="btn-danger" onclick="eliminarProducto('${p.id}')" style="padding: 6px 12px; font-size: 0.85rem;">
             <i class="fa-solid fa-trash-can"></i> Eliminar
           </button>
-        </td>
+        </td>` : '<td></td>'}
       </tr>
     `;
   });
@@ -354,12 +389,17 @@ function actualizarProductosGallery() {
             <i class="fa-solid fa-warehouse"></i> Stock: <strong>${p.stock}</strong> uds
           </div>
           <div class="product-card-actions">
+            ${isAdmin() ? `
             <button class="btn-success" onclick="aumentarStock('${p.id}')" title="Aumentar Stock">
               <i class="fa-solid fa-plus"></i> Stock
+            </button>
+            <button class="btn-warning" onclick="modificarPrecio('${p.id}')" title="Modificar Precio">
+              <i class="fa-solid fa-dollar-sign"></i> Precio
             </button>
             <button class="btn-danger" onclick="eliminarProducto('${p.id}')" title="Eliminar Producto">
               <i class="fa-solid fa-trash-can"></i> Eliminar
             </button>
+            ` : ''}
           </div>
         </div>
       </div>
@@ -371,6 +411,10 @@ function actualizarProductosGallery() {
 // --- CRUD CLIENTES ---
 
 function agregarCliente() {
+  if (!isAdmin()) {
+    alert('No tienes permisos para agregar clientes.');
+    return;
+  }
   const nombreInput = document.getElementById('nombreCliente');
   const nombre = nombreInput.value.trim();
 
@@ -389,7 +433,11 @@ function agregarCliente() {
 }
 
 function eliminarCliente(id) {
-  if (confirm('Â¿EstÃ¡s seguro de que deseas eliminar este cliente? Se mantendrÃ¡n sus cotizaciones previas.')) {
+  if (!isAdmin()) {
+    alert('No tienes permisos para eliminar clientes.');
+    return;
+  }
+  if (confirm('¿Estás seguro de que deseas eliminar este cliente? Se mantendrán sus cotizaciones previas.')) {
     clientes = clientes.filter(c => c.id !== id);
     saveState();
   }
@@ -416,9 +464,11 @@ function actualizarClientesList() {
           </div>
         </div>
         <div class="list-item-actions">
+          ${isAdmin() ? `
           <button class="btn-danger" onclick="eliminarCliente('${c.id}')" style="padding: 6px 12px; font-size: 0.85rem;">
             <i class="fa-solid fa-user-minus"></i> Eliminar
           </button>
+          ` : ''}
         </div>
       </li>
     `;
@@ -519,31 +569,37 @@ function agregarItemCatalogo() {
 
   const prodId = select.value;
   const cantidad = parseInt(cantInput.value);
-  const precio = parseFloat(precioInput.value);
+  let precio = parseFloat(precioInput.value);
 
   if (!prodId) {
-    alert('Seleccione un producto del catÃ¡logo.');
+    alert('Seleccione un producto del catálogo.');
     return;
   }
   if (isNaN(cantidad) || cantidad <= 0) {
-    alert('Ingrese una cantidad vÃ¡lida.');
-    return;
-  }
-  if (isNaN(precio) || precio < 0) {
-    alert('Ingrese un precio unitario vÃ¡lido.');
+    alert('Ingrese una cantidad válida.');
     return;
   }
 
   const prod = productos.find(p => p.id === prodId);
   if (!prod) return;
 
+  // Si no es administrador, ignorar cualquier precio modificado y usar el oficial del catálogo
+  if (!isAdmin()) {
+    precio = prod.precio;
+  }
+
+  if (isNaN(precio) || precio < 0) {
+    alert('Ingrese un precio unitario válido.');
+    return;
+  }
+
   if (cantidad > prod.stock) {
-    if (!confirm(`La cantidad ingresada (${cantidad}) supera el stock disponible (${prod.stock}). Â¿Desea continuar?`)) {
+    if (!confirm(`La cantidad ingresada (${cantidad}) supera el stock disponible (${prod.stock}). ¿Desea continuar?`)) {
       return;
     }
   }
 
-  // Verificar si ya estÃ¡ en el borrador
+  // Verificar si ya está en el borrador
   const indexExistente = borradorCotizacion.items.findIndex(item => item.id === prodId && item.tipo === 'catalogo');
   if (indexExistente !== -1) {
     borradorCotizacion.items[indexExistente].cantidad += cantidad;
@@ -569,6 +625,10 @@ function agregarItemCatalogo() {
 }
 
 function agregarItemPersonalizado() {
+  if (!isAdmin()) {
+    alert('No tienes permisos para agregar elementos personalizados.');
+    return;
+  }
   const nombreInput = document.getElementById('prodPersNombre');
   const cantInput = document.getElementById('prodPersCant');
   const precioInput = document.getElementById('prodPersPrecio');
@@ -582,11 +642,11 @@ function agregarItemPersonalizado() {
     return;
   }
   if (isNaN(cantidad) || cantidad <= 0) {
-    alert('Ingrese una cantidad vÃ¡lida.');
+    alert('Ingrese una cantidad válida.');
     return;
   }
   if (isNaN(precio) || precio < 0) {
-    alert('Ingrese un precio unitario vÃ¡lido.');
+    alert('Ingrese un precio unitario válido.');
     return;
   }
 
@@ -607,6 +667,10 @@ function agregarItemPersonalizado() {
 }
 
 function agregarItemManoObra() {
+  if (!isAdmin()) {
+    alert('No tienes permisos para agregar mano de obra.');
+    return;
+  }
   const descInput = document.getElementById('manoObraDesc');
   const costoInput = document.getElementById('manoObraCosto');
 
@@ -614,11 +678,11 @@ function agregarItemManoObra() {
   const costo = parseFloat(costoInput.value);
 
   if (!desc) {
-    alert('Ingrese la descripciÃ³n de la mano de obra.');
+    alert('Ingrese la descripción de la mano de obra.');
     return;
   }
   if (isNaN(costo) || costo < 0) {
-    alert('Ingrese un costo de mano de obra vÃ¡lido.');
+    alert('Ingrese un costo de mano de obra válido.');
     return;
   }
 
@@ -741,21 +805,32 @@ function limpiarBorrador() {
 }
 
 function guardarCotizacionBorrador() {
-  const clienteSelect = document.getElementById('clienteCotizacion');
-  const clienteId = clienteSelect.value;
+  const session = getSession();
+  const isCliente = session && session.role === 'cliente';
 
-  if (!clienteId) {
-    alert('Por favor, selecciona un cliente para la cotizaciÃ³n.');
-    return;
+  let clienteId = '';
+  let clienteNombre = '';
+
+  if (isCliente) {
+    clienteId = session.username;
+    clienteNombre = session.displayName;
+  } else {
+    const clienteSelect = document.getElementById('clienteCotizacion');
+    clienteId = clienteSelect.value;
+
+    if (!clienteId) {
+      alert('Por favor, selecciona un cliente para la cotizaciÃ³n.');
+      return;
+    }
+
+    const clienteObj = clientes.find(c => c.id === clienteId);
+    clienteNombre = clienteObj ? clienteObj.nombre : 'Cliente Desconocido';
   }
 
   if (borradorCotizacion.items.length === 0) {
     alert('Por favor, agrega al menos un producto o mano de obra a la cotizaciÃ³n.');
     return;
   }
-
-  const clienteObj = clientes.find(c => c.id === clienteId);
-  const clienteNombre = clienteObj ? clienteObj.nombre : 'Cliente Desconocido';
 
   const totales = calcularTotalesBorrador();
 
@@ -789,7 +864,11 @@ function guardarCotizacionBorrador() {
 }
 
 function eliminarCotizacion(id) {
-  if (confirm('Â¿EstÃ¡s seguro de que deseas eliminar esta cotizaciÃ³n?')) {
+  if (!isAdmin()) {
+    alert('No tienes permisos para eliminar cotizaciones.');
+    return;
+  }
+  if (confirm('¿Estás seguro de que deseas eliminar esta cotización?')) {
     cotizaciones = cotizaciones.filter(c => c.id !== id);
     saveState();
   }
@@ -799,12 +878,19 @@ function actualizarCotizacionesList() {
   const lista = document.getElementById('listaCotizaciones');
   lista.innerHTML = '';
 
-  if (cotizaciones.length === 0) {
+  const session = getSession();
+  const isCliente = session && session.role === 'cliente';
+
+  const cotsToDisplay = isCliente
+    ? cotizaciones.filter(c => c.clienteId === session.username)
+    : cotizaciones;
+
+  if (cotsToDisplay.length === 0) {
     lista.innerHTML = `<li style="text-align: center; color: var(--text-secondary); list-style: none; padding: 20px;">No hay cotizaciones registradas.</li>`;
     return;
   }
 
-  cotizaciones.forEach(c => {
+  cotsToDisplay.forEach(c => {
     lista.innerHTML += `
       <li class="modern-list-item">
         <div class="list-item-info">
@@ -823,9 +909,11 @@ function actualizarCotizacionesList() {
           <button onclick="descargarCotizacionPDF('${c.id}')" style="padding: 8px 14px; font-size: 0.85rem; background-color: var(--accent); color: white; display: inline-flex; align-items: center; gap: 6px;">
             <i class="fa-solid fa-file-pdf"></i> PDF
           </button>
+          ${isAdmin() ? `
           <button class="btn-danger" onclick="eliminarCotizacion('${c.id}')" style="padding: 8px 12px; font-size: 0.85rem;">
             <i class="fa-solid fa-trash-can"></i>
           </button>
+          ` : ''}
         </div>
       </li>
     `;
@@ -1129,6 +1217,22 @@ function actualizarUI() {
   actualizarClientesDropdown();
   actualizarProductosDropdownCotizacion();
 
+  // Ocultar/mostrar campos de cliente según rol
+  const session = getSession();
+  const isCliente = session && session.role === 'cliente';
+  const containerSelect = document.getElementById('clienteCotizacionContainer');
+  const containerReadonly = document.getElementById('clienteCotizacionReadonly');
+  const textReadonly = document.getElementById('clienteNombreReadonly');
+
+  if (isCliente) {
+    if (containerSelect) containerSelect.style.display = 'none';
+    if (containerReadonly) containerReadonly.style.display = 'block';
+    if (textReadonly) textReadonly.innerText = session.displayName;
+  } else {
+    if (containerSelect) containerSelect.style.display = 'block';
+    if (containerReadonly) containerReadonly.style.display = 'none';
+  }
+
   // 2. Dashboard KPI Counters
   document.getElementById('totalProductos').innerText = productos.length;
   document.getElementById('totalClientes').innerText = clientes.length;
@@ -1183,11 +1287,92 @@ function actualizarUI() {
   reporteDiv.innerHTML = reporteHtml;
 }
 
+// --- FUNCIONES DE LOGIN / LOGOUT ---
+
+function handleLogin(event) {
+  event.preventDefault();
+
+  const userInput = document.getElementById('loginUser');
+  const passInput = document.getElementById('loginPass');
+  const errorDiv = document.getElementById('loginError');
+  const errorMsg = document.getElementById('loginErrorMsg');
+  const loginBtn = document.getElementById('loginBtn');
+
+  // Limpiar error previo
+  errorDiv.classList.remove('visible');
+
+  const result = login(userInput.value, passInput.value);
+
+  if (result.success) {
+    loginBtn.classList.add('loading');
+    loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Ingresando...';
+
+    setTimeout(() => {
+      // Ocultar login y mostrar app
+      const loginScreen = document.getElementById('loginScreen');
+      const sidebar = document.querySelector('.sidebar');
+      const contenido = document.querySelector('.contenido');
+
+      if (loginScreen) loginScreen.classList.add('hidden');
+      if (sidebar) sidebar.style.display = '';
+      if (contenido) contenido.style.display = '';
+
+      applyRoleRestrictions();
+      
+      const session = getSession();
+      if (session && session.role === 'cliente') {
+        mostrar('productos');
+      } else {
+        mostrar('dashboard');
+      }
+
+      actualizarUI();
+
+      // Resetear formulario
+      loginBtn.classList.remove('loading');
+      loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión';
+      userInput.value = '';
+      passInput.value = '';
+    }, 600);
+  } else {
+    errorMsg.textContent = result.error;
+    errorDiv.classList.add('visible');
+
+    // Shake animation
+    const card = document.querySelector('.login-card');
+    card.style.animation = 'none';
+    card.offsetHeight; // trigger reflow
+    card.style.animation = 'shake 0.5s ease';
+  }
+}
+
+function cerrarSesion() {
+  if (confirm('¿Deseas cerrar la sesión?')) {
+    logout();
+  }
+}
+
+function togglePasswordVisibility() {
+  const passInput = document.getElementById('loginPass');
+  const icon = document.getElementById('togglePassIcon');
+
+  if (passInput.type === 'password') {
+    passInput.type = 'text';
+    icon.classList.remove('fa-eye');
+    icon.classList.add('fa-eye-slash');
+  } else {
+    passInput.type = 'password';
+    icon.classList.remove('fa-eye-slash');
+    icon.classList.add('fa-eye');
+  }
+}
+
 // Exportar funciones globalmente para enlaces onclick de HTML (debido al type="module")
 window.mostrar = mostrar;
 window.agregarProducto = agregarProducto;
 window.eliminarProducto = eliminarProducto;
 window.aumentarStock = aumentarStock;
+window.modificarPrecio = modificarPrecio;
 window.agregarCliente = agregarCliente;
 window.eliminarCliente = eliminarCliente;
 window.eliminarCotizacion = eliminarCotizacion;
@@ -1203,10 +1388,22 @@ window.calcularTotalesBorrador = calcularTotalesBorrador;
 window.limpiarBorrador = limpiarBorrador;
 window.guardarCotizacionBorrador = guardarCotizacionBorrador;
 window.cambiarVistaProductos = cambiarVistaProductos;
+window.handleLogin = handleLogin;
+window.cerrarSesion = cerrarSesion;
+window.togglePasswordVisibility = togglePasswordVisibility;
 
 // Inicializar la aplicación al cargar la página
 window.addEventListener('DOMContentLoaded', () => {
-  actualizarUI();
+  // Primero verificar autenticación
+  const loggedIn = initAuth();
+
+  if (loggedIn) {
+    const session = getSession();
+    if (session && session.role === 'cliente') {
+      mostrar('productos');
+    }
+    actualizarUI();
+  }
 
   // Escuchar carga de imagen personalizada
   const imgInput = document.getElementById('imagenProducto');
