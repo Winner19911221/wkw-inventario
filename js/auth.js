@@ -117,7 +117,7 @@ export function isLoggedIn() {
  * - Si es viewer: body recibe la clase "role-viewer" → CSS oculta .admin-only
  * - Si es admin: se asegura de que no tenga "role-viewer"
  */
-export function applyRoleRestrictions() {
+function applyRoleRestrictions() {
   const session = getSession();
   if (!session) return;
 
