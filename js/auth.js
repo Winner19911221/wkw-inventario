@@ -21,7 +21,10 @@ export function login(username, password) {
     return { success: false, error: 'Ingresa usuario y contraseña.' };
   }
 
-  const found = USERS.find(u => u.username === trimUser && u.password === trimPass);
+  const registeredUsers = JSON.parse(localStorage.getItem('wkw_registered_users')) || [];
+  const allUsers = [...USERS, ...registeredUsers];
+
+  const found = allUsers.find(u => u.username === trimUser && u.password === trimPass);
 
   if (!found) {
     return { success: false, error: 'Usuario o contraseña incorrectos.' };
@@ -37,6 +40,40 @@ export function login(username, password) {
   sessionStorage.setItem('wkw_session', JSON.stringify(session));
 
   return { success: true, user: session };
+}
+
+/**
+ * Registra un nuevo usuario en LocalStorage.
+ * @returns {{ success: boolean, error?: string }}
+ */
+export function registerUser(name, username, password, role) {
+  const trimName = name.trim();
+  const trimUser = username.trim().toLowerCase();
+  const trimPass = password.trim();
+
+  if (!trimName || !trimUser || !trimPass) {
+    return { success: false, error: 'Completa todos los campos.' };
+  }
+
+  const registeredUsers = JSON.parse(localStorage.getItem('wkw_registered_users')) || [];
+  const allUsers = [...USERS, ...registeredUsers];
+
+  const exists = allUsers.some(u => u.username === trimUser);
+  if (exists) {
+    return { success: false, error: 'El nombre de usuario ya existe.' };
+  }
+
+  const newUser = {
+    username: trimUser,
+    password: trimPass,
+    role: role,
+    displayName: trimName
+  };
+
+  registeredUsers.push(newUser);
+  localStorage.setItem('wkw_registered_users', JSON.stringify(registeredUsers));
+
+  return { success: true };
 }
 
 /**

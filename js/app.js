@@ -1,4 +1,4 @@
-import { login, logout, isAdmin, isLoggedIn, initAuth, applyRoleRestrictions, getSession } from './auth.js';
+import { login, logout, isAdmin, isLoggedIn, initAuth, applyRoleRestrictions, getSession, registerUser } from './auth.js';
 
 // Inicialización del estado desde LocalStorage o arreglos vacíos
 const defaultImages = {
@@ -133,6 +133,8 @@ let cotizaciones = JSON.parse(localStorage.getItem('pro_cotizaciones')) || [];
 
 // NavegaciÃ³n de secciones de pÃ¡gina
 function mostrar(id) {
+  console.log('mostrar called with id:', id);
+
   document.querySelectorAll('.pagina').forEach(x => x.classList.add('oculto'));
   const target = document.getElementById(id);
   if (target) {
@@ -861,6 +863,14 @@ function guardarCotizacionBorrador() {
 
   limpiarBorrador();
   saveState();
+
+  // Enviar copia de la cotización a WhatsApp
+  const whatsappNumber = '18094393928';
+  const message = `Hola, se ha generado una nueva cotización para ${clienteNombre}.
+Total: ${formatCurrency(totales.total)}
+Fecha: ${new Date().toLocaleDateString('es-DO')}`;
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, '_blank');
 }
 
 function eliminarCotizacion(id) {
@@ -1160,7 +1170,7 @@ async function descargarCotizacionPDF(id) {
   // Using small circles as bullets for contact info
   doc.setFillColor(255, 255, 255);
   doc.circle(108, 275, 1, "F");
-  doc.text("809-439-3928", 112, 276);
+  doc.text("180-943-93928", 112, 276);
   
   doc.circle(108, 281, 1, "F");
   doc.text("wkwinstalaciones.com", 112, 282);
@@ -1388,6 +1398,104 @@ window.calcularTotalesBorrador = calcularTotalesBorrador;
 window.limpiarBorrador = limpiarBorrador;
 window.guardarCotizacionBorrador = guardarCotizacionBorrador;
 window.cambiarVistaProductos = cambiarVistaProductos;
+function showRegisterForm(event) {
+  if (event) event.preventDefault();
+  
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+  const title = document.querySelector('.login-title');
+  const subtitle = document.querySelector('.login-subtitle');
+  
+  if (loginForm) loginForm.style.display = 'none';
+  if (registerForm) {
+    registerForm.style.display = 'flex';
+    registerForm.classList.remove('hidden');
+  }
+  if (title) title.innerText = 'Crea tu Cuenta';
+  if (subtitle) subtitle.innerText = 'Regístrate en el panel de inventario';
+}
+
+function showLoginForm(event) {
+  if (event) event.preventDefault();
+  
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+  const title = document.querySelector('.login-title');
+  const subtitle = document.querySelector('.login-subtitle');
+  
+  if (loginForm) loginForm.style.display = 'flex';
+  if (registerForm) registerForm.style.display = 'none';
+  if (title) title.innerText = 'WKW Security';
+  if (subtitle) subtitle.innerText = 'Accede al panel de inventario';
+}
+
+function handleRegister(event) {
+  event.preventDefault();
+  
+  const nameInput = document.getElementById('regName');
+  const userInput = document.getElementById('regUser');
+  const passInput = document.getElementById('regPass');
+  const roleSelect = document.getElementById('regRole');
+  const errorDiv = document.getElementById('regError');
+  const errorMsg = document.getElementById('regErrorMsg');
+  const regBtn = document.getElementById('regBtn');
+  
+  if (errorDiv) errorDiv.classList.remove('visible');
+  
+  const name = nameInput.value;
+  const user = userInput.value;
+  const pass = passInput.value;
+  const role = roleSelect ? roleSelect.value : 'cliente';
+  
+  const result = registerUser(name, user, pass, role);
+  
+  if (result.success) {
+    if (regBtn) {
+      regBtn.classList.add('loading');
+      regBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...';
+    }
+    
+    setTimeout(() => {
+      alert('¡Registro exitoso! Ya puedes iniciar sesión.');
+      
+      // Limpiar campos
+      nameInput.value = '';
+      userInput.value = '';
+      passInput.value = '';
+      
+      if (regBtn) {
+        regBtn.classList.remove('loading');
+        regBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Registrarse';
+      }
+      
+      // Mostrar login
+      showLoginForm();
+      
+      // Poner el usuario en el campo de login
+      const loginUser = document.getElementById('loginUser');
+      if (loginUser) {
+        loginUser.value = user;
+        const loginPass = document.getElementById('loginPass');
+        if (loginPass) loginPass.focus();
+      }
+    }, 800);
+  } else {
+    if (errorMsg) errorMsg.textContent = result.error;
+    if (errorDiv) errorDiv.classList.add('visible');
+    
+    // Shake animation
+    const card = document.querySelector('.login-card');
+    if (card) {
+      card.style.animation = 'none';
+      card.offsetHeight; // trigger reflow
+      card.style.animation = 'shake 0.5s ease';
+    }
+  }
+}
+
+window.showRegisterForm = showRegisterForm;
+window.showLoginForm = showLoginForm;
+window.handleRegister = handleRegister;
 window.handleLogin = handleLogin;
 window.cerrarSesion = cerrarSesion;
 window.togglePasswordVisibility = togglePasswordVisibility;
@@ -1419,6 +1527,28 @@ window.addEventListener('DOMContentLoaded', () => {
       } else {
         tempProductImageBase64 = '';
       }
+    });
+  }
+
+  // Video upload handling
+  const videoInput = document.getElementById('videoFileInput');
+  const uploadBtn = document.getElementById('uploadVideoBtn');
+  if (videoInput && uploadBtn) {
+    uploadBtn.addEventListener('click', () => videoInput.click());
+    videoInput.addEventListener('change', (e) => {
+      const files = e.target.files;
+      const gallery = document.querySelector('#videos .video-gallery');
+      Array.from(files).forEach(file => {
+        const url = URL.createObjectURL(file);
+        const div = document.createElement('div');
+        div.className = 'video-item';
+        div.style.width = '320px';
+        div.innerHTML = `<video controls preload="metadata" style="width:100%;border-radius:8px;">
+                           <source src="${url}" type="${file.type}">
+                         </video>
+                         <p style="margin-top:5px;color:var(--text-primary);font-weight:500;">${file.name}</p>`;
+        if (gallery) gallery.appendChild(div);
+      });
     });
   }
 });
