@@ -509,202 +509,6 @@
         <!-- Dinámico desde JS -->
       </ul>
     </section>
-
-    <!-- Sección: Reportes -->
-    <section id="reportes" class="pagina oculto">
-      <h1>Reportes & Estadísticas</h1>
-      <p class="section-subtitle">Métricas del negocio actualizadas en tiempo real.</p>
-
-      <div class="cards">
-        <div class="card">
-          <div class="card-icon" style="background-color: var(--success-glow); color: var(--success);">
-            <i class="fa-solid fa-chart-line"></i>
-          </div>
-          <div class="card-info">
-            <h3>Total Productos</h3>
-            <p id="rProductos">0</p>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-icon" style="background-color: var(--accent-glow); color: var(--accent);">
-            <i class="fa-solid fa-users"></i>
-          </div>
-          <div class="card-info">
-            <h3>Total Clientes</h3>
-            <p id="rClientes">0</p>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-icon" style="background-color: rgba(245, 158, 11, 0.1); color: var(--warning);">
-            <i class="fa-solid fa-hand-holding-dollar"></i>
-          </div>
-          <div class="card-info">
-            <h3>Valor Cotizado</h3>
-            <p id="rMontoTotal">RD$ 0.00</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-container">
-        <h2 style="font-size: 1.2rem; margin-bottom: 20px; color: #fff;"><i class="fa-solid fa-warehouse"
-                <div class="form-group">
-                  <label for="prodCatSelect">Producto del Catálogo</label>
-                  <select id="prodCatSelect" onchange="seleccionarProductoCatalogo()">
-                    <option value="">Seleccione un producto...</option>
-                  </select>
-                </div>
-
-                <div class="product-info-panel" id="prodInfoPanel" style="display: none;">
-                  <span class="info-badge price"><i class="fa-solid fa-tags"></i> Precio: <span id="prodInfoPrecio">RD$
-                      0.00</span></span>
-                  <span class="info-badge stock" id="prodInfoStockBadge"><i class="fa-solid fa-warehouse"></i> Stock:
-                    <span id="prodInfoStock">0</span> unidades</span>
-                </div>
-
-                <div class="form-grid-2col">
-                  <div class="form-group">
-                    <label for="prodCatCant">Cantidad</label>
-                    <input type="number" id="prodCatCant" value="1" min="1" oninput="validarCantCatalogo()">
-                  </div>
-                  <div class="form-group">
-                    <label for="prodCatPrecio">Precio Unitario (RD$)</label>
-                    <input type="number" id="prodCatPrecio" placeholder="0.00" min="0" step="any">
-                  </div>
-                </div>
-
-                <button type="button" onclick="agregarItemCatalogo()" style="margin-top: 10px;">
-                  <i class="fa-solid fa-circle-plus"></i> Agregar Producto
-                </button>
-              </div>
-            </div>
-
-            <!-- Form 2: Personalizado -->
-            <div class="tab-content oculto" id="form-personalizado">
-              <div class="form-grid-vertical">
-                <div class="form-group">
-                  <label for="prodPersNombre">Nombre del Producto / Concepto</label>
-                  <input type="text" id="prodPersNombre" placeholder="Ej: Cable UTP Cat6 (m)">
-                </div>
-                <div class="form-grid-2col">
-                  <div class="form-group">
-                    <label for="prodPersCant">Cantidad</label>
-                    <input type="number" id="prodPersCant" value="1" min="1">
-                  </div>
-                  <div class="form-group">
-                    <label for="prodPersPrecio">Precio Unitario (RD$)</label>
-                    <input type="number" id="prodPersPrecio" placeholder="0.00" min="0" step="any">
-                  </div>
-                </div>
-                <button type="button" onclick="agregarItemPersonalizado()" style="margin-top: 10px;">
-                  <i class="fa-solid fa-circle-plus"></i> Agregar Item Personalizado
-                </button>
-              </div>
-            </div>
-
-            <!-- Form 3: Mano de Obra -->
-            <div class="tab-content oculto" id="form-mano_obra">
-              <div class="form-grid-vertical">
-                <div class="form-group">
-                  <label for="manoObraDesc">Descripción de la Mano de Obra</label>
-                  <input type="text" id="manoObraDesc"
-                    placeholder="Ej: Instalación de 4 cámaras y configuración de DVR">
-                </div>
-                <div class="form-group">
-                  <label for="manoObraCosto">Costo de la Mano de Obra (RD$)</label>
-                  <input type="number" id="manoObraCosto" placeholder="0.00" min="0" step="any">
-                </div>
-                <button type="button" onclick="agregarItemManoObra()" style="margin-top: 10px;">
-                  <i class="fa-solid fa-circle-plus"></i> Agregar Mano de Obra
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Columna Derecha: Detalle de Cotización -->
-        <div class="quote-builder-preview">
-          <div class="form-container" style="height: 100%; display: flex; flex-direction: column;">
-            <h3 class="form-section-title"><i class="fa-solid fa-file-invoice" style="color: var(--warning);"></i> 3.
-              Resumen de la Cotización</h3>
-
-            <div id="borradorEmptyMsg"
-              style="text-align: center; color: var(--text-secondary); padding: 40px 10px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-              <i class="fa-solid fa-calculator"
-                style="font-size: 2.5rem; color: var(--border-color); margin-bottom: 15px;"></i>
-              <p>Agrega productos o mano de obra para ver el desglose en esta sección.</p>
-            </div>
-
-            <div id="borradorDetalle"
-              style="display: none; flex-grow: 1; flex-direction: column; justify-content: space-between;">
-              <div class="table-container"
-                style="margin-top: 15px; margin-bottom: 15px; border-radius: 10px; max-height: 250px; overflow-y: auto;">
-                <table class="table-compact">
-                  <thead>
-                    <tr>
-                      <th>Concepto</th>
-                      <th style="text-align: center;">Cant</th>
-                      <th style="text-align: right;">Total</th>
-                      <th style="text-align: center;">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tablaBorradorItems">
-                    <!-- Dinámico -->
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- Resumen de Totales -->
-              <div class="resumen-totales">
-                <div class="total-row">
-                  <span>Subtotal Productos:</span>
-                  <span id="totProd">RD$ 0.00</span>
-                </div>
-                <div class="total-row">
-                  <span>Mano de Obra:</span>
-                  <span id="totMano">RD$ 0.00</span>
-                </div>
-                <div class="total-row separator">
-                  <span>Subtotal Neto:</span>
-                  <span id="totNeto">RD$ 0.00</span>
-                </div>
-                <div class="total-row">
-                  <span style="display: flex; align-items: center; gap: 8px;">
-                    ITBIS (18%):
-                    <input type="checkbox" id="aplicarItbis" checked onchange="calcularTotalesBorrador()"
-                      style="width: auto; cursor: pointer; margin: 0;">
-                  </span>
-                  <span id="totItbis">RD$ 0.00</span>
-                </div>
-                <div class="total-row grand-total">
-                  <span>TOTAL GENERAL:</span>
-                  <span id="totGeneral">RD$ 0.00</span>
-                </div>
-              </div>
-
-              <!-- Botones de Acción -->
-              <div class="borrador-actions"
-                style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <button class="btn-danger" type="button" onclick="limpiarBorrador()">
-                  <i class="fa-solid fa-trash-can"></i> Limpiar
-                </button>
-                <button type="button" onclick="guardarCotizacionBorrador()" style="background-color: var(--success);">
-                  <i class="fa-solid fa-check"></i> Guardar Cotización
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <h2 style="font-size: 1.2rem; color: #fff; margin-top: 40px; margin-bottom: 15px;"><i
-          class="fa-solid fa-clock-rotate-left" style="color: var(--accent);"></i> Historial de Cotizaciones</h2>
-      <ul id="listaCotizaciones" class="modern-list">
-        <!-- Dinámico desde JS -->
-      </ul>
-    </section>
-
     <!-- Sección: Reportes -->
     <section id="reportes" class="pagina oculto">
       <h1>Reportes & Estadísticas</h1>
@@ -751,32 +555,25 @@
       </div>
     </section>
 
-<!-- Sección: Videos de Instalaciones -->
-<section id="videos" class="pagina oculto">
-  <h1>Videos de Instalaciones</h1>
-  <p class="section-subtitle">Mira nuestras instalaciones y proyectos realizados.</p>
-  <div class="video-gallery" style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;">
-    <!-- Ejemplo de video, se pueden añadir más -->
-    <div class="video-item" style="width: 320px;">
-      <video controls preload="metadata" style="width: 100%; border-radius: 8px;">
-        <source src="videos/instalacion1.mp4" type="video/mp4">
-        Tu navegador no soporta la reproducción de video.
-      </video>
-      <p style="margin-top: 5px; color: var(--text-primary); font-weight: 500;">Instalación de Cámaras IP</p>
-    </div>
-    <div class="video-item" style="width: 320px;">
-      <video controls preload="metadata" style="width: 100%; border-radius: 8px;">
-        <source src="videos/instalacion2.mp4" type="video/mp4">
-        Tu navegador no soporta la reproducción de video.
-      </video>
-      <p style="margin-top: 5px; color: var(--text-primary); font-weight: 500;">Configuración de DVR</p>
-    </div>
-  </div>
-  <div class="video-upload" style="text-align:center; margin-top:20px;">
-    <input type="file" id="videoFileInput" accept="video/*" multiple style="display:none;" />
-    <button id="uploadVideoBtn" class="btn btn-primary">Subir Video(s)</button>
-  </div>
-</section>
+    <!-- Sección: Videos de Instalaciones -->
+    <section id="videos" class="pagina oculto">
+      <h1>Videos de Instalaciones</h1>
+      <p class="section-subtitle">Mira nuestras instalaciones y proyectos realizados.</p>
+      <div class="video-gallery" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 10px;">
+        <!-- Dinámico desde JS -->
+      </div>
+      <div id="videoEmptyMsg" style="text-align: center; color: var(--text-secondary); padding: 40px 10px;">
+        <i class="fa-solid fa-film" style="font-size: 3rem; color: var(--border-color); margin-bottom: 15px; display: block;"></i>
+        <p>Aún no hay videos subidos. Sube un video usando el botón de abajo.</p>
+      </div>
+      <div class="video-upload" style="text-align:center; margin-top:20px;">
+        <input type="file" id="videoFileInput" accept="video/*" multiple style="display:none;" />
+        <button id="uploadVideoBtn" style="display: inline-flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-upload"></i> Subir Video(s)
+        </button>
+      </div>
+    </section>
+  </main>
 
 <!-- Biblioteca jsPDF para descargas de PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

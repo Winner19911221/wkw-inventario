@@ -117,7 +117,8 @@ export function isLoggedIn() {
  * - Si es viewer: body recibe la clase "role-viewer" → CSS oculta .admin-only
  * - Si es admin: se asegura de que no tenga "role-viewer"
  */
-function applyRoleRestrictions() {
+// Export role restrictions function
+export function applyRoleRestrictions() {
   const session = getSession();
   if (!session) return;
 
@@ -143,6 +144,12 @@ function applyRoleRestrictions() {
   // Actualizar badge de usuario en sidebar
   updateUserBadge(session);
 }
+
+// Alias for logout to match HTML onclick
+export function cerrarSesion() {
+  logout();
+}
+
 
 /**
  * Actualiza el badge de sesión en el sidebar.
@@ -209,6 +216,38 @@ export function hideLoginScreen() {
   if (sidebar) sidebar.style.display = '';
   if (contenido) contenido.style.display = '';
 }
+
+export function showLoginForm(event) {
+  if (event) event.preventDefault();
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+  if (loginForm) {
+    loginForm.classList.remove('hidden');
+    loginForm.style.display = '';
+  }
+  if (registerForm) {
+    registerForm.classList.add('hidden');
+    registerForm.style.display = 'none';
+  }
+}
+
+export function showRegisterForm(event) {
+  if (event) event.preventDefault();
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+  if (registerForm) {
+    registerForm.classList.remove('hidden');
+    registerForm.style.display = '';
+  }
+  if (loginForm) {
+    loginForm.classList.add('hidden');
+    loginForm.style.display = 'none';
+  }
+}
+
+// Expose to global scope for inline onclick handlers
+window.showLoginForm = showLoginForm;
+window.showRegisterForm = showRegisterForm;
 
 /**
  * Inicializa el sistema de autenticación.

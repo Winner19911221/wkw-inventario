@@ -1518,201 +1518,6 @@ window.addEventListener('DOMContentLoaded', () => {
   if (imgInput) {
     imgInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
-      if (loginScreen) loginScreen.classList.add('hidden');
-      if (sidebar) sidebar.style.display = '';
-      if (contenido) contenido.style.display = '';
-
-      applyRoleRestrictions();
-      
-      const session = getSession();
-      if (session && session.role === 'cliente') {
-        mostrar('productos');
-      } else {
-        mostrar('dashboard');
-      }
-
-      actualizarUI();
-
-      // Resetear formulario
-      loginBtn.classList.remove('loading');
-      loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión';
-      userInput.value = '';
-      passInput.value = '';
-    }, 600);
-  } else {
-    errorMsg.textContent = result.error;
-    errorDiv.classList.add('visible');
-
-    // Shake animation
-    const card = document.querySelector('.login-card');
-    card.style.animation = 'none';
-    card.offsetHeight; // trigger reflow
-    card.style.animation = 'shake 0.5s ease';
-  }
-}
-
-function cerrarSesion() {
-  if (confirm('¿Deseas cerrar la sesión?')) {
-    logout();
-  }
-}
-
-function togglePasswordVisibility() {
-  const passInput = document.getElementById('loginPass');
-  const icon = document.getElementById('togglePassIcon');
-
-  if (passInput.type === 'password') {
-    passInput.type = 'text';
-    icon.classList.remove('fa-eye');
-    icon.classList.add('fa-eye-slash');
-  } else {
-    passInput.type = 'password';
-    icon.classList.remove('fa-eye-slash');
-    icon.classList.add('fa-eye');
-  }
-}
-
-// Exportar funciones globalmente para enlaces onclick de HTML (debido al type="module")
-window.mostrar = mostrar;
-window.agregarProducto = agregarProducto;
-window.eliminarProducto = eliminarProducto;
-window.aumentarStock = aumentarStock;
-window.modificarPrecio = modificarPrecio;
-window.agregarCliente = agregarCliente;
-window.eliminarCliente = eliminarCliente;
-window.eliminarCotizacion = eliminarCotizacion;
-window.descargarCotizacionPDF = descargarCotizacionPDF;
-window.switchTab = switchTab;
-window.seleccionarProductoCatalogo = seleccionarProductoCatalogo;
-window.validarCantCatalogo = validarCantCatalogo;
-window.agregarItemCatalogo = agregarItemCatalogo;
-window.agregarItemPersonalizado = agregarItemPersonalizado;
-window.agregarItemManoObra = agregarItemManoObra;
-window.eliminarItemBorrador = eliminarItemBorrador;
-window.calcularTotalesBorrador = calcularTotalesBorrador;
-window.limpiarBorrador = limpiarBorrador;
-window.guardarCotizacionBorrador = guardarCotizacionBorrador;
-window.cambiarVistaProductos = cambiarVistaProductos;
-function showRegisterForm(event) {
-  if (event) event.preventDefault();
-  
-  const loginForm = document.getElementById('loginForm');
-  const registerForm = document.getElementById('registerForm');
-  const title = document.querySelector('.login-title');
-  const subtitle = document.querySelector('.login-subtitle');
-  
-  if (loginForm) loginForm.style.display = 'none';
-  if (registerForm) {
-    registerForm.style.display = 'flex';
-    registerForm.classList.remove('hidden');
-  }
-  if (title) title.innerText = 'Crea tu Cuenta';
-  if (subtitle) subtitle.innerText = 'Regístrate en el panel de inventario';
-}
-
-function showLoginForm(event) {
-  if (event) event.preventDefault();
-  
-  const loginForm = document.getElementById('loginForm');
-  const registerForm = document.getElementById('registerForm');
-  const title = document.querySelector('.login-title');
-  const subtitle = document.querySelector('.login-subtitle');
-  
-  if (loginForm) loginForm.style.display = 'flex';
-  if (registerForm) registerForm.style.display = 'none';
-  if (title) title.innerText = 'WKW Security';
-  if (subtitle) subtitle.innerText = 'Accede al panel de inventario';
-}
-
-function handleRegister(event) {
-  event.preventDefault();
-  
-  const nameInput = document.getElementById('regName');
-  const userInput = document.getElementById('regUser');
-  const passInput = document.getElementById('regPass');
-  const roleSelect = document.getElementById('regRole');
-  const errorDiv = document.getElementById('regError');
-  const errorMsg = document.getElementById('regErrorMsg');
-  const regBtn = document.getElementById('regBtn');
-  
-  if (errorDiv) errorDiv.classList.remove('visible');
-  
-  const name = nameInput.value;
-  const user = userInput.value;
-  const pass = passInput.value;
-  const role = roleSelect ? roleSelect.value : 'cliente';
-  
-  const result = registerUser(name, user, pass, role);
-  
-  if (result.success) {
-    if (regBtn) {
-      regBtn.classList.add('loading');
-      regBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...';
-    }
-    
-    setTimeout(() => {
-      alert('¡Registro exitoso! Ya puedes iniciar sesión.');
-      
-      // Limpiar campos
-      nameInput.value = '';
-      userInput.value = '';
-      passInput.value = '';
-      
-      if (regBtn) {
-        regBtn.classList.remove('loading');
-        regBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Registrarse';
-      }
-      
-      // Mostrar login
-      showLoginForm();
-      
-      // Poner el usuario en el campo de login
-      const loginUser = document.getElementById('loginUser');
-      if (loginUser) {
-        loginUser.value = user;
-        const loginPass = document.getElementById('loginPass');
-        if (loginPass) loginPass.focus();
-      }
-    }, 800);
-  } else {
-    if (errorMsg) errorMsg.textContent = result.error;
-    if (errorDiv) errorDiv.classList.add('visible');
-    
-    // Shake animation
-    const card = document.querySelector('.login-card');
-    if (card) {
-      card.style.animation = 'none';
-      card.offsetHeight; // trigger reflow
-      card.style.animation = 'shake 0.5s ease';
-    }
-  }
-}
-
-window.showRegisterForm = showRegisterForm;
-window.showLoginForm = showLoginForm;
-window.handleRegister = handleRegister;
-window.handleLogin = handleLogin;
-window.cerrarSesion = cerrarSesion;
-window.togglePasswordVisibility = togglePasswordVisibility;
-
-// Inicializar la aplicación al cargar la página
-window.addEventListener('DOMContentLoaded', () => {
-  // Primero verificar autenticación
-  const loggedIn = initAuth();
-
-  if (loggedIn) {
-    const session = getSession();
-    if (session && session.role === 'cliente') {
-      mostrar('productos');
-    }
-    actualizarUI();
-  }
-
-  // Escuchar carga de imagen personalizada
-  const imgInput = document.getElementById('imagenProducto');
-  if (imgInput) {
-    imgInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
       if (file) {
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -1729,18 +1534,32 @@ window.addEventListener('DOMContentLoaded', () => {
   let videos = JSON.parse(localStorage.getItem('pro_videos')) || [];
   const renderVideos = () => {
     const gallery = document.querySelector('#videos .video-gallery');
+    const emptyMsg = document.getElementById('videoEmptyMsg');
     if (!gallery) return;
     gallery.innerHTML = '';
-    videos.forEach((v, idx) => {
-      const div = document.createElement('div');
-      div.className = 'video-item';
-      div.style.width = '320px';
-      div.innerHTML = `<video controls preload="metadata" style="width:100%;border-radius:8px;">
-                         <source src="${v.dataUrl}" type="${v.type}">
-                       </video>
-                       <p style="margin-top:5px;color:var(--text-primary);font-weight:500;">${v.name}</p>`;
-      gallery.appendChild(div);
-    });
+    if (videos.length === 0) {
+      if (emptyMsg) emptyMsg.style.display = 'block';
+    } else {
+      if (emptyMsg) emptyMsg.style.display = 'none';
+      videos.forEach((v, idx) => {
+        const div = document.createElement('div');
+        div.className = 'video-item';
+        div.style.cssText = 'width:320px;background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;padding:10px;position:relative;';
+        div.innerHTML = `<video controls preload="metadata" style="width:100%;border-radius:8px;">
+                           <source src="${v.dataUrl}" type="${v.type}">
+                         </video>
+                         <p style="margin-top:8px;color:var(--text-primary);font-weight:500;font-size:0.9rem;">${v.name}</p>
+                         <button onclick="eliminarVideo(${idx})" title="Eliminar video" style="position:absolute;top:8px;right:8px;background:var(--danger);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.8rem;"><i class="fa-solid fa-trash-can"></i></button>`;
+        gallery.appendChild(div);
+      });
+    }
+  };
+  window.eliminarVideo = (idx) => {
+    if (confirm('¿Eliminar este video?')) {
+      videos.splice(idx, 1);
+      localStorage.setItem('pro_videos', JSON.stringify(videos));
+      renderVideos();
+    }
   };
   // Initial render of stored videos
   renderVideos();
