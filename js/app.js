@@ -2284,7 +2284,7 @@ window.addEventListener('DOMContentLoaded', () => {
     try {
       // Importar Firebase SDK v9 modular
       const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
-      const { getDatabase, ref, push, remove, onValue, off } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js');
+      const { getDatabase, ref, push, remove, onValue, off, update } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js');
 
       // Evitar doble inicialización
       if (getApps().length === 0) {
@@ -2297,7 +2297,7 @@ window.addEventListener('DOMContentLoaded', () => {
       firebaseVideosRef = ref(firebaseDB, 'wkw_videos');
 
       // Guardar funciones para uso posterior
-      window._fb = { ref, push, remove, onValue, off };
+      window._fb = { ref, push, remove, onValue, off, update };
       return true;
     } catch (err) {
       console.error('Firebase init error:', err);
@@ -2339,16 +2339,23 @@ window.addEventListener('DOMContentLoaded', () => {
         max-width: 400px;
       `;
 
-      const deleteBtnHtml = isAdmin()
-        ? `<button onclick="eliminarVideo('${v.fbKey}')"
-             title="Eliminar video"
-             style="position:absolute;top:10px;right:10px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:var(--danger);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:0.8rem;display:flex;align-items:center;gap:4px;">
-             <i class="fa-solid fa-trash-can"></i>
-           </button>`
+      const adminBtnsHtml = isAdmin()
+        ? `<div style="position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:10;">
+             <button onclick="editarNombreVideo('${v.fbKey}', '${v.name.replace(/'/g, "\\'")}')"
+               title="Editar nombre"
+               style="background:rgba(251,146,60,0.15);border:1px solid rgba(251,146,60,0.3);color:#fb923c;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:0.8rem;display:flex;align-items:center;justify-content:center;">
+               <i class="fa-solid fa-pen"></i>
+             </button>
+             <button onclick="eliminarVideo('${v.fbKey}')"
+               title="Eliminar video"
+               style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:var(--danger);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:0.8rem;display:flex;align-items:center;justify-content:center;">
+               <i class="fa-solid fa-trash-can"></i>
+             </button>
+           </div>`
         : '';
 
       div.innerHTML = `
-        ${deleteBtnHtml}
+        ${adminBtnsHtml}
         <video controls preload="metadata"
           style="width:100%;border-radius:10px;background:#000;max-height:220px;">
           <source src="${v.dataUrl}" type="${v.type || 'video/mp4'}">
@@ -2428,6 +2435,42 @@ window.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('pro_videos', JSON.stringify(localVids));
       renderVideos(localVids.map((v, i) => ({ ...v, fbKey: i })));
       showToast('Video eliminado.');
+    }
+  };
+
+  // Edit video name: from Firebase or localStorage
+  window.editarNombreVideo = async (fbKey, oldName) => {
+    if (!isAdmin()) {
+      alert('No tienes permisos para editar videos.');
+      return;
+    }
+    const newName = prompt('Editar nombre del video:', oldName);
+    if (newName === null) return; // cancel
+    const trimmed = newName.trim();
+    if (!trimmed) {
+      alert('El nombre no puede estar vacío.');
+      return;
+    }
+
+    if (fbKey && firebaseVideosRef && window._fb) {
+      const { ref: fbRef, update } = window._fb;
+      try {
+        const videoItemRef = fbRef(firebaseDB, `wkw_videos/${fbKey}`);
+        await update(videoItemRef, { name: trimmed });
+        showToast('Nombre del video actualizado.');
+      } catch (err) {
+        alert('Error al actualizar el nombre: ' + err.message);
+      }
+    } else {
+      // localStorage fallback
+      let localVids = JSON.parse(localStorage.getItem('pro_videos')) || [];
+      const idx = parseInt(fbKey);
+      if (!isNaN(idx) && localVids[idx]) {
+        localVids[idx].name = trimmed;
+        localStorage.setItem('pro_videos', JSON.stringify(localVids));
+        renderVideos(localVids.map((v, i) => ({ ...v, fbKey: i })));
+        showToast('Nombre del video actualizado.');
+      }
     }
   };
 
