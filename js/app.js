@@ -205,11 +205,18 @@ function mostrar(id) {
     target.classList.remove('oculto');
   }
 
-  // Actualizar clase 'active' en el menÃº de navegaciÃ³n
+  // Actualizar clase 'active' en el menú de navegación
   document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active'));
   const menuLink = document.getElementById(`menu-${id}`);
   if (menuLink) {
     menuLink.classList.add('active');
+  }
+
+  // Actualizar clase 'active' en el menú de navegación inferior (móvil)
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
+  const bnavLink = document.getElementById(`bnav-${id}`);
+  if (bnavLink) {
+    bnavLink.classList.add('active');
   }
 }
 

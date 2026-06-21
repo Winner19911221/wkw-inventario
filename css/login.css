@@ -394,6 +394,10 @@ body.role-cliente .client-hidden {
   display: none !important;
 }
 
+body:not(.role-cliente) .client-only {
+  display: none !important;
+}
+
 /* Viewer info badge shown only for viewers */
 .viewer-notice {
   display: none;
