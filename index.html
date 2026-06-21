@@ -127,6 +127,9 @@
       <li id="menu-cotizaciones" onclick="mostrar('cotizaciones')">
         <i class="fa-solid fa-file-invoice-dollar"></i> Cotizaciones
       </li>
+      <li id="menu-ventas" onclick="mostrar('ventas')">
+        <i class="fa-solid fa-cart-shopping"></i> Ventas
+      </li>
       <li id="menu-videos" onclick="mostrar('videos')">
         <i class="fa-solid fa-video"></i> Videos
       </li>
@@ -192,6 +195,30 @@
             target="_blank" class="whatsapp-link"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
         </div>
       </div>
+
+      <!-- Configuración de Cloudinary (Admin Only) -->
+      <div class="form-container admin-only" style="margin-top: 30px;">
+        <h2 style="font-size: 1.2rem; margin-bottom: 10px; color: #fff;">
+          <i class="fa-solid fa-cloud" style="color: var(--accent);"></i> Configuración de Cloudinary
+        </h2>
+        <p style="margin-bottom: 15px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+          Conecta Cloudinary para almacenar videos e imágenes directamente en la nube. Esto evita problemas de límite de almacenamiento local en el navegador (localStorage). 
+          <strong>Nota:</strong> Debes habilitar las subidas no firmadas (<em>Unsigned uploads</em>) en la sección <strong>Settings -> Upload</strong> de tu consola de Cloudinary para obtener un <em>Upload Preset</em>.
+        </p>
+        <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+          <div class="form-group">
+            <label for="cloudinaryCloudName" style="color: #fff; font-weight: 500; margin-bottom: 6px; display: block;">Cloud Name</label>
+            <input type="text" id="cloudinaryCloudName" placeholder="Ej: dxxk3z8pq" onchange="guardarConfigCloudinary()" style="width: 100%;" />
+          </div>
+          <div class="form-group">
+            <label for="cloudinaryUploadPreset" style="color: #fff; font-weight: 500; margin-bottom: 6px; display: block;">Upload Preset (No firmado / Unsigned)</label>
+            <input type="text" id="cloudinaryUploadPreset" placeholder="Ej: wkw_preset" onchange="guardarConfigCloudinary()" style="width: 100%;" />
+          </div>
+        </div>
+        <div id="cloudinaryStatusMsg" style="margin-top: 12px; font-size: 0.85rem; color: var(--success); display: none; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-circle-check"></i> <span>Configuración guardada correctamente.</span>
+        </div>
+      </div>
     </section>
 
     <!-- Sección: Productos -->
@@ -249,7 +276,7 @@
             <label for="imagenProducto">Imagen (Opcional)</label>
             <input type="file" id="imagenProducto" accept="image/*" style="padding: 7px 12px; font-size: 0.85rem;">
           </div>
-          <button onclick="agregarProducto()" style="width: 100%;">
+          <button id="btnAgregarProducto" onclick="agregarProducto()" style="width: 100%;">
             <i class="fa-solid fa-circle-plus"></i> Agregar
           </button>
         </div>
@@ -566,14 +593,154 @@
         <i class="fa-solid fa-film" style="font-size: 3rem; color: var(--border-color); margin-bottom: 15px; display: block;"></i>
         <p>Aún no hay videos subidos. Sube un video usando el botón de abajo.</p>
       </div>
-      <div class="video-upload" style="text-align:center; margin-top:20px;">
+      <div class="video-upload admin-only" style="text-align:center; margin-top:20px;">
         <input type="file" id="videoFileInput" accept="video/*" multiple style="display:none;" />
         <button id="uploadVideoBtn" style="display: inline-flex; align-items: center; gap: 8px;">
           <i class="fa-solid fa-upload"></i> Subir Video(s)
         </button>
       </div>
     </section>
+
+    <!-- Sección: Ventas / Compras -->
+    <section id="ventas" class="pagina oculto">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+        <div>
+          <h1 id="ventasTitle">Registro de Ventas</h1>
+          <p id="ventasSubtitle" class="section-subtitle" style="margin-bottom: 0;">Historial de transacciones facturadas y ventas completadas.</p>
+        </div>
+      </div>
+
+      <!-- Métricas de Ventas (Admin Only) -->
+      <div class="cards admin-only" style="margin-bottom: 30px;">
+        <div class="card" style="border-left: 4px solid var(--success);">
+          <div class="card-icon" style="background-color: var(--success-glow); color: var(--success);">
+            <i class="fa-solid fa-money-bill-trend-up"></i>
+          </div>
+          <div class="card-info">
+            <h3>Ingresos Totales</h3>
+            <p id="salesRevenue">RD$ 0.00</p>
+          </div>
+        </div>
+
+        <div class="card" style="border-left: 4px solid var(--accent);">
+          <div class="card-icon" style="background-color: var(--accent-glow); color: var(--accent);">
+            <i class="fa-solid fa-receipt"></i>
+          </div>
+          <div class="card-info">
+            <h3>Transacciones</h3>
+            <p id="salesCount">0</p>
+          </div>
+        </div>
+
+        <div class="card" style="border-left: 4px solid var(--warning);">
+          <div class="card-icon" style="background-color: rgba(245, 158, 11, 0.1); color: var(--warning);">
+            <i class="fa-solid fa-ticket"></i>
+          </div>
+          <div class="card-info">
+            <h3>Ticket Promedio</h3>
+            <p id="salesAverage">RD$ 0.00</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtro y Búsqueda -->
+      <div class="form-container" style="padding: 16px 24px; margin-bottom: 24px;">
+        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+          <div class="form-group" style="flex: 1; min-width: 250px; gap: 4px;">
+            <input type="text" id="buscarVentaInput" placeholder="Buscar por cliente o ID de factura..." oninput="filtrarVentas()" style="padding: 10px 14px; font-size: 0.9rem;" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de Ventas -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Factura ID</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Conceptos</th>
+              <th style="text-align: right;">Total</th>
+              <th style="text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaVentas">
+            <!-- Dinámico desde JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
   </main>
+
+  <!-- Botón Flotante del Carrito -->
+  <button id="floatingCartBtn" class="btn-float-cart" onclick="abrirCarrito()" title="Ver carrito">
+    <i class="fa-solid fa-cart-shopping"></i>
+    <span id="cartCountBadge" class="cart-badge" style="display: none;">0</span>
+  </button>
+
+  <!-- Overlay para cerrar el carrito al hacer click fuera -->
+  <div id="cartOverlay" class="cart-overlay" onclick="cerrarCarrito()"></div>
+
+  <!-- Panel Lateral del Carrito (Drawer) -->
+  <div id="cartDrawer" class="cart-drawer">
+    <div class="cart-drawer-header">
+      <h2><i class="fa-solid fa-cart-shopping" style="color: var(--accent);"></i> Tu Carrito</h2>
+      <button class="cart-drawer-close" onclick="cerrarCarrito()" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Lista de Items en el Carrito -->
+    <div class="cart-drawer-body" id="cartDrawerBody">
+      <!-- Dinámico desde JS -->
+    </div>
+
+    <!-- Pie del Carrito: Totales y Acciones -->
+    <div class="cart-drawer-footer">
+      <div class="resumen-totales" style="background: none; border: none; padding: 0;">
+        <div class="total-row">
+          <span>Subtotal:</span>
+          <span id="cartSubtotal">RD$ 0.00</span>
+        </div>
+        <div class="total-row">
+          <span style="display: flex; align-items: center; gap: 8px;">
+            ITBIS (18%):
+            <input type="checkbox" id="cartItbis" checked onchange="renderCarrito()" style="width: auto; cursor: pointer; margin: 0;">
+          </span>
+          <span id="cartItbisVal">RD$ 0.00</span>
+        </div>
+        <div class="total-row grand-total">
+          <span>TOTAL:</span>
+          <span id="cartTotal">RD$ 0.00</span>
+        </div>
+      </div>
+
+      <!-- Selección de Cliente (Admin Only / Cliente Read-only) -->
+      <div class="cart-client-select" id="cartClientSelectContainer" style="margin-top: 8px;">
+        <label for="cartCliente">Seleccionar Cliente para la Venta</label>
+        <select id="cartCliente" style="padding: 10px 14px; font-size: 0.9rem;">
+          <option value="">Seleccione un cliente...</option>
+        </select>
+      </div>
+      <div class="cart-client-select" id="cartClientReadonlyContainer" style="margin-top: 8px; display: none;">
+        <label>Cliente Facturado</label>
+        <div id="cartClienteReadonly" style="padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border: 1px solid var(--border-color); color: #fff; font-weight: 500; font-size: 0.9rem;">
+          Cliente
+        </div>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button class="btn-danger" onclick="vaciarCarrito()" style="flex: 1; padding: 12px;"><i class="fa-solid fa-trash-can"></i> Limpiar</button>
+        <button class="btn-checkout" onclick="confirmarVenta()" style="flex: 2; padding: 12px;"><i class="fa-solid fa-credit-card"></i> Procesar Venta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notificaciones (Micro-interacciones) -->
+  <div id="toastNotif" class="toast-notif">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toastNotifText">Producto agregado al carrito.</span>
+  </div>
 
 <!-- Biblioteca jsPDF para descargas de PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

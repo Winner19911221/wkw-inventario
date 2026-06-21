@@ -1,5 +1,67 @@
 import { login, logout, isAdmin, isLoggedIn, initAuth, applyRoleRestrictions, getSession, registerUser } from './auth.js';
 
+// Configuración de Cloudinary
+let cloudinaryCloudName = localStorage.getItem('cloudinary_cloud_name') || 'dywuqsrmm';
+let cloudinaryUploadPreset = localStorage.getItem('cloudinary_upload_preset') || 'wkw_videos';
+
+function inicializarInputsCloudinary() {
+  const nameInput = document.getElementById('cloudinaryCloudName');
+  const presetInput = document.getElementById('cloudinaryUploadPreset');
+  if (nameInput) nameInput.value = cloudinaryCloudName;
+  if (presetInput) presetInput.value = cloudinaryUploadPreset;
+}
+
+function guardarConfigCloudinary() {
+  const nameInput = document.getElementById('cloudinaryCloudName');
+  const presetInput = document.getElementById('cloudinaryUploadPreset');
+  const statusMsg = document.getElementById('cloudinaryStatusMsg');
+  
+  if (nameInput) cloudinaryCloudName = nameInput.value.trim();
+  if (presetInput) cloudinaryUploadPreset = presetInput.value.trim();
+  
+  localStorage.setItem('cloudinary_cloud_name', cloudinaryCloudName);
+  localStorage.setItem('cloudinary_upload_preset', cloudinaryUploadPreset);
+  
+  if (statusMsg) {
+    statusMsg.style.display = 'inline-flex';
+    setTimeout(() => {
+      statusMsg.style.display = 'none';
+    }, 3000);
+  }
+}
+
+window.guardarConfigCloudinary = guardarConfigCloudinary;
+
+/**
+ * Sube un archivo a Cloudinary usando Unsigned Uploads.
+ * @param {File|string} file - El archivo a subir.
+ * @param {string} resourceType - El tipo de recurso ('image' o 'video').
+ * @returns {Promise<string>} La URL segura del archivo subido.
+ */
+async function uploadFileToCloudinary(file, resourceType = 'image') {
+  if (!cloudinaryCloudName || !cloudinaryUploadPreset) {
+    throw new Error('Cloudinary no está configurado. Por favor, ingresa tu Cloud Name y Upload Preset.');
+  }
+
+  const url = `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/${resourceType}/upload`;
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', cloudinaryUploadPreset);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error?.message || 'Error al subir el archivo a Cloudinary.');
+  }
+
+  const data = await response.json();
+  return data.secure_url;
+}
+
 // Inicialización del estado desde LocalStorage o arreglos vacíos
 const defaultImages = {
   camaras_ip: 'img/camara_ip.png',
@@ -130,6 +192,8 @@ productos.forEach(p => {
 
 let clientes = JSON.parse(localStorage.getItem('pro_clientes')) || [];
 let cotizaciones = JSON.parse(localStorage.getItem('pro_cotizaciones')) || [];
+let ventas = JSON.parse(localStorage.getItem('pro_ventas')) || [];
+let cart = JSON.parse(localStorage.getItem('pro_cart')) || [];
 
 // NavegaciÃ³n de secciones de pÃ¡gina
 function mostrar(id) {
@@ -154,6 +218,7 @@ function saveState() {
   localStorage.setItem('pro_productos', JSON.stringify(productos));
   localStorage.setItem('pro_clientes', JSON.stringify(clientes));
   localStorage.setItem('pro_cotizaciones', JSON.stringify(cotizaciones));
+  localStorage.setItem('pro_ventas', JSON.stringify(ventas));
   actualizarUI();
 }
 
@@ -164,7 +229,7 @@ function formatCurrency(monto) {
 
 // --- CRUD PRODUCTOS ---
 
-function agregarProducto() {
+async function agregarProducto() {
   if (!isAdmin()) {
     alert('No tienes permisos para agregar productos.');
     return;
@@ -174,6 +239,7 @@ function agregarProducto() {
   const stockInput = document.getElementById('stockProducto');
   const categoriaSelect = document.getElementById('categoriaProducto');
   const imgInput = document.getElementById('imagenProducto');
+  const addBtn = document.getElementById('btnAgregarProducto');
 
   const nombre = nombreInput.value.trim();
   const precio = parseFloat(precioInput.value);
@@ -194,7 +260,37 @@ function agregarProducto() {
     return;
   }
 
-  const imagen = tempProductImageBase64 || defaultImages[categoria] || defaultImages['otros'];
+  let imagen = defaultImages[categoria] || defaultImages['otros'];
+  const hasCustomImage = imgInput && imgInput.files && imgInput.files[0];
+  const isCloudConfigured = cloudinaryCloudName && cloudinaryUploadPreset;
+
+  if (hasCustomImage) {
+    if (isCloudConfigured) {
+      // Subida a Cloudinary
+      const originalHtml = addBtn ? addBtn.innerHTML : '';
+      if (addBtn) {
+        addBtn.disabled = true;
+        addBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
+      }
+
+      try {
+        const file = imgInput.files[0];
+        const imageUrl = await uploadFileToCloudinary(file, 'image');
+        imagen = imageUrl;
+      } catch (error) {
+        console.error(error);
+        alert('Error al subir la imagen a Cloudinary: ' + error.message);
+        if (addBtn) {
+          addBtn.disabled = false;
+          addBtn.innerHTML = originalHtml;
+        }
+        return;
+      }
+    } else {
+      // Fallback local base64
+      imagen = tempProductImageBase64 || defaultImages[categoria] || defaultImages['otros'];
+    }
+  }
 
   // Agregar al arreglo
   productos.push({
@@ -213,6 +309,11 @@ function agregarProducto() {
   if (categoriaSelect) categoriaSelect.value = 'camaras_ip';
   if (imgInput) imgInput.value = '';
   tempProductImageBase64 = '';
+
+  if (addBtn) {
+    addBtn.disabled = false;
+    addBtn.innerHTML = '<i class="fa-solid fa-circle-plus"></i> Agregar';
+  }
 
   saveState();
 }
@@ -322,6 +423,21 @@ function actualizarProductosTable() {
       statusBadge = '<span class="badge badge-success">Disponible</span>';
     }
 
+    const canAdd = p.stock > 0;
+    const addCartBtn = canAdd 
+      ? `<button onclick="agregarAlCarrito('${p.id}')" style="padding: 6px 12px; font-size: 0.85rem; background-color: var(--accent-glow); color: var(--accent); border: 1px solid rgba(99, 102, 241, 0.2);" title="Añadir al carrito">
+           <i class="fa-solid fa-cart-plus"></i>
+         </button>`
+      : `<button disabled style="padding: 6px 12px; font-size: 0.85rem; opacity: 0.5;" title="Agotado">
+           <i class="fa-solid fa-cart-plus"></i>
+         </button>`;
+
+    const deleteBtn = isAdmin()
+      ? `<button class="btn-danger" onclick="eliminarProducto('${p.id}')" style="padding: 6px 12px; font-size: 0.85rem;" title="Eliminar Producto">
+           <i class="fa-solid fa-trash-can"></i>
+         </button>`
+      : '';
+
     tbody.innerHTML += `
       <tr>
         <td>
@@ -342,11 +458,12 @@ function actualizarProductosTable() {
           ${isAdmin() ? `<button class="btn-success" onclick="aumentarStock('${p.id}')" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px;">+</button>` : ''}
         </td>
         <td>${statusBadge}</td>
-        ${isAdmin() ? `<td style="text-align: center;">
-          <button class="btn-danger" onclick="eliminarProducto('${p.id}')" style="padding: 6px 12px; font-size: 0.85rem;">
-            <i class="fa-solid fa-trash-can"></i> Eliminar
-          </button>
-        </td>` : '<td></td>'}
+        <td style="text-align: center; white-space: nowrap;">
+          <div style="display: flex; gap: 8px; justify-content: center;">
+            ${addCartBtn}
+            ${deleteBtn}
+          </div>
+        </td>
       </tr>
     `;
   });
@@ -390,6 +507,11 @@ function actualizarProductosGallery() {
           <div class="product-card-stock">
             <i class="fa-solid fa-warehouse"></i> Stock: <strong>${p.stock}</strong> uds
           </div>
+          
+          <button class="btn-add-cart" onclick="agregarAlCarrito('${p.id}')" style="width: 100%; margin-bottom: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;" ${p.stock === 0 ? 'disabled' : ''}>
+            <i class="fa-solid fa-cart-plus"></i> ${p.stock === 0 ? 'Agotado' : 'Añadir al Carrito'}
+          </button>
+
           <div class="product-card-actions">
             ${isAdmin() ? `
             <button class="btn-success" onclick="aumentarStock('${p.id}')" title="Aumentar Stock">
@@ -1377,6 +1499,588 @@ function togglePasswordVisibility() {
   }
 }
 
+// =============================================
+// SISTEMA DE CARRITO DE COMPRAS & VENTAS
+// =============================================
+
+function showToast(msg) {
+  const toast = document.getElementById('toastNotif');
+  const toastText = document.getElementById('toastNotifText');
+  if (toast && toastText) {
+    toastText.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2500);
+  }
+}
+
+function abrirCarrito() {
+  const drawer = document.getElementById('cartDrawer');
+  const overlay = document.getElementById('cartOverlay');
+  if (drawer && overlay) {
+    drawer.classList.add('active');
+    overlay.classList.add('active');
+    renderCarrito();
+    actualizarClientesDropdownCarrito();
+  }
+}
+
+function cerrarCarrito() {
+  const drawer = document.getElementById('cartDrawer');
+  const overlay = document.getElementById('cartOverlay');
+  if (drawer && overlay) {
+    drawer.classList.remove('active');
+    overlay.classList.remove('active');
+  }
+}
+
+function agregarAlCarrito(id) {
+  const prod = productos.find(p => p.id === id);
+  if (!prod) return;
+
+  if (prod.stock <= 0) {
+    alert('El producto no cuenta con stock disponible.');
+    return;
+  }
+
+  const existing = cart.find(item => item.id === id);
+  if (existing) {
+    if (existing.quantity >= prod.stock) {
+      alert(`No puedes agregar más unidades de ${prod.nombre}. Stock disponible: ${prod.stock}`);
+      return;
+    }
+    existing.quantity += 1;
+  } else {
+    cart.push({
+      id: prod.id,
+      nombre: prod.nombre,
+      precio: prod.precio,
+      imagen: prod.imagen,
+      quantity: 1
+    });
+  }
+
+  localStorage.setItem('pro_cart', JSON.stringify(cart));
+  actualizarCartBadge();
+  showToast(`¡${prod.nombre} agregado al carrito!`);
+}
+
+function cambiarCantidadCarrito(id, delta) {
+  const item = cart.find(c => c.id === id);
+  if (!item) return;
+
+  const prod = productos.find(p => p.id === id);
+  const maxStock = prod ? prod.stock : 999;
+
+  const newQty = item.quantity + delta;
+  if (newQty <= 0) {
+    eliminarDelCarrito(id);
+    return;
+  }
+
+  if (newQty > maxStock) {
+    alert(`No hay stock suficiente. Stock máximo: ${maxStock}`);
+    return;
+  }
+
+  item.quantity = newQty;
+  localStorage.setItem('pro_cart', JSON.stringify(cart));
+  renderCarrito();
+  actualizarCartBadge();
+}
+
+function eliminarDelCarrito(id) {
+  cart = cart.filter(item => item.id !== id);
+  localStorage.setItem('pro_cart', JSON.stringify(cart));
+  renderCarrito();
+  actualizarCartBadge();
+  showToast('Producto eliminado del carrito.');
+}
+
+function vaciarCarrito() {
+  if (cart.length === 0) return;
+  if (confirm('¿Estás seguro de que deseas vaciar el carrito?')) {
+    cart = [];
+    localStorage.setItem('pro_cart', JSON.stringify(cart));
+    renderCarrito();
+    actualizarCartBadge();
+    showToast('Carrito vaciado.');
+  }
+}
+
+function actualizarCartBadge() {
+  const badge = document.getElementById('cartCountBadge');
+  if (!badge) return;
+  const count = cart.reduce((acc, curr) => acc + curr.quantity, 0);
+  if (count > 0) {
+    badge.innerText = count;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderCarrito() {
+  const container = document.getElementById('cartDrawerBody');
+  if (!container) return;
+
+  if (cart.length === 0) {
+    container.innerHTML = `
+      <div class="cart-empty-state">
+        <i class="fa-solid fa-cart-shopping"></i>
+        <p>Tu carrito está vacío</p>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">Agrega productos desde la sección de Productos.</span>
+      </div>
+    `;
+    document.getElementById('cartSubtotal').innerText = formatCurrency(0);
+    document.getElementById('cartItbisVal').innerText = formatCurrency(0);
+    document.getElementById('cartTotal').innerText = formatCurrency(0);
+    return;
+  }
+
+  container.innerHTML = '';
+  let subtotal = 0;
+
+  cart.forEach(item => {
+    const itemTotal = item.precio * item.quantity;
+    subtotal += itemTotal;
+
+    container.innerHTML += `
+      <div class="cart-item">
+        <img src="${item.imagen}" alt="${item.nombre}" class="cart-item-img">
+        <div class="cart-item-details">
+          <div class="cart-item-title" title="${item.nombre}">${item.nombre}</div>
+          <div class="cart-item-price">${formatCurrency(item.precio)}</div>
+          <div class="cart-item-qty">
+            <button class="btn-qty" onclick="cambiarCantidadCarrito('${item.id}', -1)">-</button>
+            <span class="qty-val">${item.quantity}</span>
+            <button class="btn-qty" onclick="cambiarCantidadCarrito('${item.id}', 1)">+</button>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+          <div class="cart-item-total">${formatCurrency(itemTotal)}</div>
+          <button class="btn-cart-remove" onclick="eliminarDelCarrito('${item.id}')" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
+        </div>
+      </div>
+    `;
+  });
+
+  const aplicarItbis = document.getElementById('cartItbis').checked;
+  const itbis = aplicarItbis ? subtotal * 0.18 : 0;
+  const total = subtotal + itbis;
+
+  document.getElementById('cartSubtotal').innerText = formatCurrency(subtotal);
+  document.getElementById('cartItbisVal').innerText = formatCurrency(itbis);
+  document.getElementById('cartTotal').innerText = formatCurrency(total);
+}
+
+function actualizarClientesDropdownCarrito() {
+  const session = getSession();
+  const isCliente = session && session.role === 'cliente';
+
+  const containerSelect = document.getElementById('cartClientSelectContainer');
+  const containerReadonly = document.getElementById('cartClientReadonlyContainer');
+  const textReadonly = document.getElementById('cartClienteReadonly');
+  const select = document.getElementById('cartCliente');
+
+  if (isCliente) {
+    if (containerSelect) containerSelect.style.display = 'none';
+    if (containerReadonly) containerReadonly.style.display = 'block';
+    if (textReadonly) textReadonly.innerText = session.displayName;
+  } else {
+    if (containerSelect) containerSelect.style.display = 'block';
+    if (containerReadonly) containerReadonly.style.display = 'none';
+    
+    if (select) {
+      const currentVal = select.value;
+      select.innerHTML = '<option value="">Seleccione un cliente...</option>';
+      clientes.forEach(c => {
+        select.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+      });
+      select.value = currentVal;
+    }
+  }
+}
+
+function confirmarVenta() {
+  if (cart.length === 0) {
+    alert('El carrito está vacío.');
+    return;
+  }
+
+  const session = getSession();
+  const isCliente = session && session.role === 'cliente';
+
+  let clienteId = '';
+  let clienteNombre = '';
+
+  if (isCliente) {
+    clienteId = session.username;
+    clienteNombre = session.displayName;
+  } else {
+    const select = document.getElementById('cartCliente');
+    clienteId = select ? select.value : '';
+
+    if (!clienteId) {
+      alert('Por favor, selecciona un cliente para registrar la venta.');
+      return;
+    }
+
+    const clienteObj = clientes.find(c => c.id === clienteId);
+    clienteNombre = clienteObj ? clienteObj.nombre : 'Cliente Desconocido';
+  }
+
+  // Verificar stock una última vez
+  for (const item of cart) {
+    const prod = productos.find(p => p.id === item.id);
+    if (!prod || prod.stock < item.quantity) {
+      alert(`Stock insuficiente para ${item.nombre}. Stock actual: ${prod ? prod.stock : 0}`);
+      return;
+    }
+  }
+
+  // Procesar deducción de stock
+  cart.forEach(item => {
+    const prod = productos.find(p => p.id === item.id);
+    if (prod) {
+      prod.stock = Math.max(0, prod.stock - item.quantity);
+    }
+  });
+
+  // Calcular totales
+  let subtotal = cart.reduce((acc, curr) => acc + (curr.precio * curr.quantity), 0);
+  const aplicarItbis = document.getElementById('cartItbis').checked;
+  const itbis = aplicarItbis ? subtotal * 0.18 : 0;
+  const total = subtotal + itbis;
+
+  const facturaId = '_' + Math.random().toString(36).substr(2, 9);
+  const nuevaVenta = {
+    id: facturaId,
+    clienteId,
+    clienteNombre,
+    items: JSON.parse(JSON.stringify(cart)),
+    subtotal,
+    itbis,
+    itbisPorcentaje: aplicarItbis ? 18 : 0,
+    total,
+    fecha: new Date().toLocaleDateString('es-DO')
+  };
+
+  // Guardar venta
+  ventas.push(nuevaVenta);
+  
+  // Limpiar carrito
+  cart = [];
+  localStorage.setItem('pro_cart', JSON.stringify(cart));
+  
+  // Guardar estado general
+  saveState();
+  cerrarCarrito();
+  actualizarCartBadge();
+
+  alert('¡Venta realizada con éxito!');
+
+  // Enviar copia a WhatsApp
+  const whatsappNumber = '18094393928';
+  const message = `Hola, se ha completado una venta a ${clienteNombre}.
+Factura ID: #${facturaId.toUpperCase()}
+Total: ${formatCurrency(total)}
+Fecha: ${nuevaVenta.fecha}`;
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, '_blank');
+
+  // Descargar factura PDF
+  descargarFacturaPDF(facturaId);
+}
+
+async function descargarFacturaPDF(id) {
+  const v = ventas.find(item => item.id === id);
+  if (!v) {
+    alert('Factura no encontrada.');
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  let logoImgData = null;
+  try {
+    const response = await fetch('logo.png');
+    const blob = await response.blob();
+    const reader = new FileReader();
+    logoImgData = await new Promise((resolve) => {
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.error('Error cargando logo:', e);
+  }
+
+  // Paleta oficial de Ventas (Emerald Green y Dark Slate)
+  const darkSlate = [15, 23, 42];
+  const emeraldGreen = [16, 185, 129];
+  const lightGrey = [245, 247, 250];
+
+  // Header background (Emerald curved band)
+  doc.setFillColor(emeraldGreen[0], emeraldGreen[1], emeraldGreen[2]);
+  doc.ellipse(105, 45, 120, 12, "F");
+  
+  doc.setFillColor(darkSlate[0], darkSlate[1], darkSlate[2]);
+  doc.ellipse(105, 43, 120, 12, "F");
+  doc.rect(0, 0, 210, 43, "F");
+
+  // Header content
+  if (logoImgData) {
+    doc.addImage(logoImgData, 'PNG', 12, 10, 30, 30);
+  }
+
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(255, 255, 255);
+  doc.text("WKW VENTAS E INSTALACIONES", 46, 20);
+
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(220, 220, 220);
+  doc.text("Seguridad | Confianza | Calidad", 46, 27);
+  doc.text("Camaras - Redes - Instalaciones - Soporte Tecnico", 46, 33);
+  doc.text("Santo Domingo, Republica Dominicana", 46, 39);
+
+  // Info section
+  const startY = 75;
+
+  // Datos factura
+  doc.setFillColor(emeraldGreen[0], emeraldGreen[1], emeraldGreen[2]);
+  doc.circle(20, startY - 1.5, 3.5, "F");
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
+  doc.text("FACTURA DE VENTA", 28, startY);
+
+  doc.setFontSize(10);
+  doc.setFont("Helvetica", "normal");
+  doc.setTextColor(50, 50, 50);
+  doc.text(`Factura ID: #${v.id.toUpperCase()}`, 28, startY + 8);
+  doc.text(`Fecha: ${v.fecha}`, 28, startY + 14);
+  doc.text(`Método: Pago Contra Entrega`, 28, startY + 20);
+
+  // Separador
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.5);
+  doc.line(105, startY - 5, 105, startY + 22);
+
+  // Cliente
+  doc.setFillColor(emeraldGreen[0], emeraldGreen[1], emeraldGreen[2]);
+  doc.circle(120, startY - 1.5, 3.5, "F");
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
+  doc.text("ADQUIRIENTE", 128, startY);
+
+  doc.setFontSize(10);
+  doc.setFont("Helvetica", "normal");
+  doc.setTextColor(50, 50, 50);
+  doc.text(v.clienteNombre, 128, startY + 8);
+  doc.setFont("Helvetica", "bold");
+  doc.setTextColor(emeraldGreen[0], emeraldGreen[1], emeraldGreen[2]);
+  doc.text("Transacción Completada", 128, startY + 14);
+
+  // Table header
+  let currentY = 110;
+  doc.setFillColor(darkSlate[0], darkSlate[1], darkSlate[2]);
+  doc.rect(15, currentY, 180, 10, "F");
+
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255);
+  doc.text("Concepto / Producto", 20, currentY + 6.5);
+  doc.text("Cant.", 125, currentY + 6.5, { align: "center" });
+  doc.text("Precio Unit.", 160, currentY + 6.5, { align: "right" });
+  doc.text("Total", 190, currentY + 6.5, { align: "right" });
+
+  currentY += 10;
+
+  // Table rows
+  v.items.forEach((item, index) => {
+    if (currentY > 230) {
+      doc.addPage();
+      currentY = 20;
+    }
+
+    if (index % 2 === 0) {
+      doc.setFillColor(lightGrey[0], lightGrey[1], lightGrey[2]);
+      doc.rect(15, currentY, 180, 8, "F");
+    }
+
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(60, 60, 60);
+
+    let nombre = item.nombre;
+    if (nombre.length > 55) {
+      nombre = nombre.substring(0, 52) + "...";
+    }
+
+    doc.text(nombre, 20, currentY + 5.5);
+    doc.text(item.quantity.toString(), 125, currentY + 5.5, { align: "center" });
+    doc.text(formatCurrency(item.precio), 160, currentY + 5.5, { align: "right" });
+
+    doc.setFont("Helvetica", "bold");
+    doc.setTextColor(darkSlate[0], darkSlate[1], darkSlate[2]);
+    doc.text(formatCurrency(item.precio * item.quantity), 190, currentY + 5.5, { align: "right" });
+
+    currentY += 8;
+  });
+
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.5);
+  doc.line(15, currentY + 2, 195, currentY + 2);
+  currentY += 10;
+
+  // Totals
+  if (currentY > 210) {
+    doc.addPage();
+    currentY = 20;
+  }
+
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(80, 80, 80);
+  
+  doc.text("Subtotal Neto:", 115, currentY);
+  doc.text(formatCurrency(v.subtotal), 190, currentY, { align: 'right' });
+  doc.setDrawColor(230, 230, 230);
+  doc.line(150, currentY + 2, 190, currentY + 2);
+
+  doc.text(`ITBIS (${v.itbisPorcentaje.toFixed(1)}%):`, 115, currentY + 6);
+  doc.text(formatCurrency(v.itbis), 190, currentY + 6, { align: 'right' });
+
+  currentY += 12;
+
+  // Total bar
+  doc.setFillColor(emeraldGreen[0], emeraldGreen[1], emeraldGreen[2]);
+  doc.rect(115, currentY, 80, 14, "F");
+  
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text("TOTAL PAGADO:", 120, currentY + 9.5);
+  doc.text(formatCurrency(v.total), 190, currentY + 9.5, { align: 'right' });
+
+  // Footer
+  doc.setFillColor(darkSlate[0], darkSlate[1], darkSlate[2]);
+  doc.rect(0, 265, 210, 32, "F"); 
+
+  doc.setDrawColor(255, 255, 255);
+  doc.setLineWidth(1);
+  doc.circle(20, 280, 5);
+  doc.line(18, 280, 19.5, 281.5);
+  doc.line(19.5, 281.5, 22, 278);
+
+  doc.setFont("Helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255);
+  doc.text("Comprobante de Pago Oficial", 30, 278);
+  doc.setFont("Helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(200, 200, 200);
+  doc.text("Documento oficial de WKW Security.", 30, 284);
+
+  doc.setDrawColor(100, 100, 150);
+  doc.setLineWidth(0.5);
+  doc.line(100, 273, 100, 287);
+
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.setFillColor(255, 255, 255);
+  doc.circle(108, 275, 1, "F");
+  doc.text("180-943-93928", 112, 276);
+  
+  doc.circle(108, 281, 1, "F");
+  doc.text("wkwinstalaciones.com", 112, 282);
+  
+  doc.circle(108, 287, 1, "F");
+  doc.text("ventas@wkwinstalaciones.com", 112, 288);
+
+  doc.save(`factura_${v.clienteNombre.replace(/\s+/g, '_')}_${v.fecha.replace(/\//g, '-')}.pdf`);
+}
+
+function actualizarVentasList() {
+  const lista = document.getElementById('tablaVentas');
+  if (!lista) return;
+  lista.innerHTML = '';
+
+  const session = getSession();
+  const isCliente = session && session.role === 'cliente';
+
+  const query = document.getElementById('buscarVentaInput').value.trim().toLowerCase();
+  
+  let filtered = isCliente
+    ? ventas.filter(v => v.clienteId === session.username)
+    : ventas;
+
+  if (query) {
+    filtered = filtered.filter(v => 
+      v.clienteNombre.toLowerCase().includes(query) || 
+      v.id.toLowerCase().includes(query)
+    );
+  }
+
+  if (filtered.length === 0) {
+    lista.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 30px;">No hay registros de ventas.</td></tr>`;
+    return;
+  }
+
+  filtered.forEach(v => {
+    const conceptosText = v.items.map(item => `${item.nombre} (x${item.quantity})`).join(', ');
+    const displayConceptos = conceptosText.length > 50 ? conceptosText.substring(0, 47) + '...' : conceptosText;
+
+    const actionDelete = isAdmin()
+      ? `<button class="btn-danger" onclick="eliminarVenta('${v.id}')" style="padding: 6px 10px; font-size: 0.85rem;" title="Eliminar Registro">
+           <i class="fa-solid fa-trash-can"></i>
+         </button>`
+      : '';
+
+    lista.innerHTML += `
+      <tr>
+        <td style="font-weight: 600; color: var(--accent);">#${v.id.toUpperCase().substr(1, 6)}</td>
+        <td>${v.fecha}</td>
+        <td>${v.clienteNombre}</td>
+        <td title="${conceptosText}">${displayConceptos}</td>
+        <td style="text-align: right; font-weight: 600; color: var(--success);">${formatCurrency(v.total)}</td>
+        <td style="text-align: center; white-space: nowrap;">
+          <div style="display: inline-flex; gap: 8px;">
+            <button onclick="descargarFacturaPDF('${v.id}')" style="padding: 6px 12px; font-size: 0.85rem; background-color: var(--success); color: white; display: inline-flex; align-items: center; gap: 6px;" title="Descargar Factura PDF">
+              <i class="fa-solid fa-file-pdf"></i> PDF
+            </button>
+            ${actionDelete}
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function filtrarVentas() {
+  actualizarVentasList();
+}
+
+function eliminarVenta(id) {
+  if (!isAdmin()) {
+    alert('No tienes permisos para eliminar registros de ventas.');
+    return;
+  }
+  if (confirm('¿Estás seguro de que deseas eliminar este registro de venta? El stock deducido no se restaurará automáticamente.')) {
+    ventas = ventas.filter(v => v.id !== id);
+    saveState();
+  }
+}
+
 // Exportar funciones globalmente para enlaces onclick de HTML (debido al type="module")
 window.mostrar = mostrar;
 window.agregarProducto = agregarProducto;
@@ -1398,6 +2102,16 @@ window.calcularTotalesBorrador = calcularTotalesBorrador;
 window.limpiarBorrador = limpiarBorrador;
 window.guardarCotizacionBorrador = guardarCotizacionBorrador;
 window.cambiarVistaProductos = cambiarVistaProductos;
+window.abrirCarrito = abrirCarrito;
+window.cerrarCarrito = cerrarCarrito;
+window.agregarAlCarrito = agregarAlCarrito;
+window.cambiarCantidadCarrito = cambiarCantidadCarrito;
+window.eliminarDelCarrito = eliminarDelCarrito;
+window.vaciarCarrito = vaciarCarrito;
+window.confirmarVenta = confirmarVenta;
+window.descargarFacturaPDF = descargarFacturaPDF;
+window.filtrarVentas = filtrarVentas;
+window.eliminarVenta = eliminarVenta;
 function showRegisterForm(event) {
   if (event) event.preventDefault();
   
@@ -1512,6 +2226,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     actualizarUI();
   }
+  inicializarInputsCloudinary();
 
   // Escuchar carga de imagen personalizada
   const imgInput = document.getElementById('imagenProducto');
@@ -1538,23 +2253,42 @@ window.addEventListener('DOMContentLoaded', () => {
     if (!gallery) return;
     gallery.innerHTML = '';
     if (videos.length === 0) {
-      if (emptyMsg) emptyMsg.style.display = 'block';
+      if (emptyMsg) {
+        emptyMsg.style.display = 'block';
+        const pMsg = emptyMsg.querySelector('p');
+        if (pMsg) {
+          if (isAdmin()) {
+            pMsg.textContent = 'Aún no hay videos subidos. Sube un video usando el botón de abajo.';
+          } else {
+            pMsg.textContent = 'Aún no hay videos subidos.';
+          }
+        }
+      }
     } else {
       if (emptyMsg) emptyMsg.style.display = 'none';
       videos.forEach((v, idx) => {
         const div = document.createElement('div');
         div.className = 'video-item';
         div.style.cssText = 'width:320px;background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;padding:10px;position:relative;';
+        
+        const deleteBtnHtml = isAdmin()
+          ? `<button onclick="eliminarVideo(${idx})" title="Eliminar video" style="position:absolute;top:8px;right:8px;background:var(--danger);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.8rem;"><i class="fa-solid fa-trash-can"></i></button>`
+          : '';
+
         div.innerHTML = `<video controls preload="metadata" style="width:100%;border-radius:8px;">
                            <source src="${v.dataUrl}" type="${v.type}">
                          </video>
                          <p style="margin-top:8px;color:var(--text-primary);font-weight:500;font-size:0.9rem;">${v.name}</p>
-                         <button onclick="eliminarVideo(${idx})" title="Eliminar video" style="position:absolute;top:8px;right:8px;background:var(--danger);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.8rem;"><i class="fa-solid fa-trash-can"></i></button>`;
+                         ${deleteBtnHtml}`;
         gallery.appendChild(div);
       });
     }
   };
   window.eliminarVideo = (idx) => {
+    if (!isAdmin()) {
+      alert('No tienes permisos para eliminar videos.');
+      return;
+    }
     if (confirm('¿Eliminar este video?')) {
       videos.splice(idx, 1);
       localStorage.setItem('pro_videos', JSON.stringify(videos));
@@ -1567,19 +2301,71 @@ window.addEventListener('DOMContentLoaded', () => {
   const videoInput = document.getElementById('videoFileInput');
   const uploadBtn = document.getElementById('uploadVideoBtn');
   if (videoInput && uploadBtn) {
-    uploadBtn.addEventListener('click', () => videoInput.click());
-    videoInput.addEventListener('change', (e) => {
-      const files = e.target.files;
-      Array.from(files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const dataUrl = event.target.result;
-          videos.push({ name: file.name, type: file.type, dataUrl });
+    uploadBtn.addEventListener('click', () => {
+      if (!isAdmin()) {
+        alert('No tienes permisos para subir videos.');
+        return;
+      }
+      videoInput.click();
+    });
+    videoInput.addEventListener('change', async (e) => {
+      if (!isAdmin()) {
+        alert('No tienes permisos para subir videos.');
+        return;
+      }
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
+
+      const isCloudConfigured = cloudinaryCloudName && cloudinaryUploadPreset;
+
+      if (!isCloudConfigured) {
+        const confirmLocal = confirm(
+          'Cloudinary no está configurado. ¿Deseas subir el video usando el almacenamiento local del navegador (puede causar errores si el archivo es muy grande)?'
+        );
+        if (!confirmLocal) {
+          videoInput.value = '';
+          return;
+        }
+
+        // Fallback local (base64 en localStorage)
+        let processedCount = 0;
+        files.forEach(file => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const dataUrl = event.target.result;
+            videos.push({ name: file.name, type: file.type, dataUrl });
+            processedCount++;
+            if (processedCount === files.length) {
+              localStorage.setItem('pro_videos', JSON.stringify(videos));
+              renderVideos();
+              videoInput.value = '';
+            }
+          };
+          reader.readAsDataURL(file);
+        });
+      } else {
+        // Subida a Cloudinary con indicador de carga
+        const originalHtml = uploadBtn.innerHTML;
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo video...';
+
+        try {
+          for (const file of files) {
+            const videoUrl = await uploadFileToCloudinary(file, 'video');
+            videos.push({ name: file.name, type: file.type, dataUrl: videoUrl });
+          }
           localStorage.setItem('pro_videos', JSON.stringify(videos));
           renderVideos();
-        };
-        reader.readAsDataURL(file);
-      });
+          alert('¡Video(s) subido(s) con éxito a Cloudinary!');
+        } catch (error) {
+          console.error(error);
+          alert('Error al subir video(s): ' + error.message);
+        } finally {
+          uploadBtn.disabled = false;
+          uploadBtn.innerHTML = originalHtml;
+          videoInput.value = '';
+        }
+      }
     });
   }
 });

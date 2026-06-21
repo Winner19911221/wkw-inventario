@@ -1,14 +1,112 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WKW Ventas e Instalaciones - Sistema de Gestión</title>
+
+  <title>WKW Security | Cámaras de Seguridad, CCTV, Redes e Inventario</title>
+
+  <meta name="description" content="WKW Security ofrece instalación de cámaras de seguridad, CCTV, DVR, NVR, control de acceso, redes, inventario y soluciones tecnológicas en República Dominicana.">
+
+  <meta name="keywords" content="cámaras de seguridad, CCTV, DVR, NVR, control de acceso, redes, inventario, tecnología, República Dominicana">
+
+  <meta name="author" content="WKW Security">
+  <meta name="robots" content="index,follow">
+
+  <!-- Open Graph para Facebook y WhatsApp -->
+  <meta property="og:title" content="WKW Security">
+  <meta property="og:description" content="Instalación de cámaras de seguridad, CCTV, redes y soluciones tecnológicas.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://winner19911221.github.io/wkw-inventario/">
+  <meta property="og:image" content="https://winner19911221.github.io/wkw-inventario/assets/logo.png">
+  <meta name="theme-color" content="#0056b3">
+  <meta name="language" content="Spanish">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="WKW Security">
+  <meta name="twitter:description" content="Cámaras de seguridad, CCTV, redes e inventario.">
+  <meta name="twitter:image" content="https://winner19911221.github.io/wkw-inventario/assets/logo.png">
+
+  <link rel="canonical" href="https://winner19911221.github.io/wkw-inventario/">
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <script type="module" crossorigin src="/assets/index-ChCoXJzf.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-DERg5oit.css">
+  <script type="module" crossorigin src="/assets/index-LR_pAckC.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-_ox2ok_V.css">
 </head>
+
 <body>
+
+  <!-- Pantalla de Login -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="login-logo-wrap">
+        <img src="/assets/logo-BEw-153h.png" alt="WKW Logo" class="login-logo">
+        <h2 class="login-title">WKW Security</h2>
+        <p class="login-subtitle">Accede al panel de inventario</p>
+      </div>
+      <!-- Formulario de Login -->
+      <form class="login-form" id="loginForm" onsubmit="handleLogin(event)">
+        <div class="login-field">
+          <i class="fa-solid fa-user field-icon"></i>
+          <input type="text" id="loginUser" placeholder="Usuario" autocomplete="username" autofocus>
+        </div>
+        <div class="login-field">
+          <i class="fa-solid fa-lock field-icon"></i>
+          <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password">
+          <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
+            <i class="fa-solid fa-eye" id="togglePassIcon"></i>
+          </button>
+        </div>
+        <div class="login-error" id="loginError">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span id="loginErrorMsg"></span>
+        </div>
+        <button type="submit" class="login-btn" id="loginBtn">
+          <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+        </button>
+        <div class="login-register-toggle" style="margin-top: 15px; text-align: center; font-size: 0.9rem;">
+          <span style="color: var(--text-secondary);">¿No tienes cuenta? </span>
+          <a href="#" onclick="showRegisterForm(event)" style="color: var(--accent); text-decoration: none; font-weight: 600;">Regístrate</a>
+        </div>
+      </form>
+
+      <!-- Formulario de Registro (oculto por defecto) -->
+      <form class="login-form hidden" id="registerForm" onsubmit="handleRegister(event)" style="display: none;">
+        <div class="login-field">
+          <i class="fa-solid fa-signature field-icon"></i>
+          <input type="text" id="regName" placeholder="Nombre Completo" required>
+        </div>
+        <div class="login-field">
+          <i class="fa-solid fa-user field-icon"></i>
+          <input type="text" id="regUser" placeholder="Usuario" required>
+        </div>
+        <div class="login-field">
+          <i class="fa-solid fa-lock field-icon"></i>
+          <input type="password" id="regPass" placeholder="Contraseña" required>
+        </div>
+        <div class="login-field">
+          <i class="fa-solid fa-user-tag field-icon"></i>
+          <select id="regRole" style="padding-left: 46px; background-color: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); color: #fff; font-size: 0.95rem; border-radius: 12px; height: 50px;">
+            <option value="cliente">Cliente (Hacer Cotizaciones)</option>
+            <option value="viewer">Usuario (Solo Lectura)</option>
+          </select>
+        </div>
+        <div class="login-error" id="regError">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span id="regErrorMsg"></span>
+        </div>
+        <button type="submit" class="login-btn" id="regBtn">
+          <i class="fa-solid fa-user-plus"></i> Registrarse
+        </button>
+        <div class="login-register-toggle" style="margin-top: 10px; text-align: center; font-size: 0.9rem;">
+          <span style="color: var(--text-secondary);">¿Ya tienes cuenta? </span>
+          <a href="#" onclick="showLoginForm(event)" style="color: var(--accent); text-decoration: none; font-weight: 600;">Inicia Sesión</a>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Sidebar / Barra Lateral -->
   <aside class="sidebar">
@@ -16,22 +114,30 @@
       <img src="/assets/logo-BEw-153h.png" alt="WKW Logo" class="sidebar-logo">
     </div>
     <ul>
-      <li id="menu-dashboard" class="active" onclick="mostrar('dashboard')">
+      <li id="menu-dashboard" class="active client-hidden" onclick="mostrar('dashboard')">
         <i class="fa-solid fa-chart-line"></i> Dashboard
       </li>
       <li id="menu-productos" onclick="mostrar('productos')">
         <i class="fa-solid fa-box"></i> Productos
       </li>
-      <li id="menu-clientes" onclick="mostrar('clientes')">
+      <li id="menu-clientes" class="client-hidden" onclick="mostrar('clientes')">
         <i class="fa-solid fa-users"></i> Clientes
       </li>
       <li id="menu-cotizaciones" onclick="mostrar('cotizaciones')">
         <i class="fa-solid fa-file-invoice-dollar"></i> Cotizaciones
       </li>
-      <li id="menu-reportes" onclick="mostrar('reportes')">
+      <li id="menu-videos" onclick="mostrar('videos')">
+        <i class="fa-solid fa-video"></i> Videos
+      </li>
+      <li id="menu-reportes" class="client-hidden" onclick="mostrar('reportes')">
         <i class="fa-solid fa-chart-pie"></i> Reportes
       </li>
     </ul>
+
+    <!-- Información de sesión y logout -->
+    <div id="userSessionInfo" class="user-session-info">
+      <!-- Dinámico desde auth.js -->
+    </div>
   </aside>
 
   <!-- Contenido Principal -->
@@ -75,25 +181,84 @@
       </div>
 
       <div class="form-container" style="margin-top: 30px;">
-        <h2 style="font-size: 1.2rem; margin-bottom: 15px; color: #fff;"><i class="fa-solid fa-bolt" style="color: var(--accent);"></i> Accesos Rápidos</h2>
+        <h2 style="font-size: 1.2rem; margin-bottom: 15px; color: #fff;"><i class="fa-solid fa-bolt"
+            style="color: var(--accent);"></i> Accesos Rápidos</h2>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button onclick="mostrar('productos')"><i class="fa-solid fa-plus"></i> Gestionar Productos</button>
-          <button onclick="mostrar('clientes')"><i class="fa-solid fa-user-plus"></i> Gestionar Clientes</button>
-          <button onclick="mostrar('cotizaciones')"><i class="fa-solid fa-file-circle-plus"></i> Crear Cotización</button>
+          <button class="admin-only" onclick="mostrar('productos')"><i class="fa-solid fa-plus"></i> Gestionar Productos</button>
+          <button class="admin-only" onclick="mostrar('clientes')"><i class="fa-solid fa-user-plus"></i> Gestionar Clientes</button>
+
+          <a href="https://wa.me/18094393928?text=Hola,%20me%20gustar%C3%ADa%20recibir%20informaci%C3%B3n."
+            target="_blank" class="whatsapp-link"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+        </div>
+      </div>
+
+      <!-- Configuración de Cloudinary (Admin Only) -->
+      <div class="form-container admin-only" style="margin-top: 30px;">
+        <h2 style="font-size: 1.2rem; margin-bottom: 10px; color: #fff;">
+          <i class="fa-solid fa-cloud" style="color: var(--accent);"></i> Configuración de Cloudinary
+        </h2>
+        <p style="margin-bottom: 15px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+          Conecta Cloudinary para almacenar videos e imágenes directamente en la nube. Esto evita problemas de límite de almacenamiento local en el navegador (localStorage). 
+          <strong>Nota:</strong> Debes habilitar las subidas no firmadas (<em>Unsigned uploads</em>) en la sección <strong>Settings -> Upload</strong> de tu consola de Cloudinary para obtener un <em>Upload Preset</em>.
+        </p>
+        <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+          <div class="form-group">
+            <label for="cloudinaryCloudName" style="color: #fff; font-weight: 500; margin-bottom: 6px; display: block;">Cloud Name</label>
+            <input type="text" id="cloudinaryCloudName" placeholder="Ej: dxxk3z8pq" onchange="guardarConfigCloudinary()" style="width: 100%;" />
+          </div>
+          <div class="form-group">
+            <label for="cloudinaryUploadPreset" style="color: #fff; font-weight: 500; margin-bottom: 6px; display: block;">Upload Preset (No firmado / Unsigned)</label>
+            <input type="text" id="cloudinaryUploadPreset" placeholder="Ej: wkw_preset" onchange="guardarConfigCloudinary()" style="width: 100%;" />
+          </div>
+        </div>
+        <div id="cloudinaryStatusMsg" style="margin-top: 12px; font-size: 0.85rem; color: var(--success); display: none; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-circle-check"></i> <span>Configuración guardada correctamente.</span>
         </div>
       </div>
     </section>
 
     <!-- Sección: Productos -->
     <section id="productos" class="pagina oculto">
-      <h1>Gestión de Productos</h1>
-      <p class="section-subtitle">Agrega, edita y administra tu catálogo de productos.</p>
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+        <div>
+          <h1>Gestión de Productos</h1>
+          <p class="section-subtitle" style="margin-bottom: 0;">Agrega, edita y administra tu catálogo de productos.</p>
+        </div>
+        <div class="view-toggle-container">
+          <button id="btnVistaTabla" class="btn-toggle active" onclick="cambiarVistaProductos('tabla')">
+            <i class="fa-solid fa-table-list"></i> Tabla
+          </button>
+          <button id="btnVistaGaleria" class="btn-toggle" onclick="cambiarVistaProductos('galeria')">
+            <i class="fa-solid fa-table-cells"></i> Galería
+          </button>
+        </div>
+      </div>
 
-      <div class="form-container">
-        <div class="form-grid">
+      <!-- Aviso para usuarios con solo lectura -->
+      <div class="viewer-notice">
+        <i class="fa-solid fa-eye"></i>
+        <span>Modo solo lectura — no tienes permisos para modificar productos.</span>
+      </div>
+
+      <div class="form-container admin-only">
+        <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
           <div class="form-group">
             <label for="nombreProducto">Nombre del Producto</label>
             <input type="text" id="nombreProducto" placeholder="Ej: Laptop Asus ROG">
+          </div>
+          <div class="form-group">
+            <label for="categoriaProducto">Categoría</label>
+            <select id="categoriaProducto">
+              <option value="camaras_ip">Cámaras IP</option>
+              <option value="camaras_analogicas">Cámaras Analógicas HD</option>
+              <option value="grabadores">Grabadores (DVR/NVR)</option>
+              <option value="discos_duros">Discos Duros</option>
+              <option value="switches">Switches de Red</option>
+              <option value="poe">Equipos PoE</option>
+              <option value="redes">Redes / Conectividad</option>
+              <option value="otros">Otros</option>
+            </select>
           </div>
           <div class="form-group">
             <label for="precioProducto">Precio Unitario (RD$)</label>
@@ -103,7 +268,11 @@
             <label for="stockProducto">Stock Inicial</label>
             <input type="number" id="stockProducto" placeholder="0" min="0">
           </div>
-          <button onclick="agregarProducto()">
+          <div class="form-group">
+            <label for="imagenProducto">Imagen (Opcional)</label>
+            <input type="file" id="imagenProducto" accept="image/*" style="padding: 7px 12px; font-size: 0.85rem;">
+          </div>
+          <button id="btnAgregarProducto" onclick="agregarProducto()" style="width: 100%;">
             <i class="fa-solid fa-circle-plus"></i> Agregar
           </button>
         </div>
@@ -125,6 +294,10 @@
           </tbody>
         </table>
       </div>
+
+      <div id="galeriaProductos" class="product-grid oculto">
+        <!-- Dinámico desde JS -->
+      </div>
     </section>
 
     <!-- Sección: Clientes -->
@@ -132,7 +305,13 @@
       <h1>Clientes</h1>
       <p class="section-subtitle">Administra los clientes de tu cartera comercial.</p>
 
-      <div class="form-container">
+      <!-- Aviso para usuarios con solo lectura -->
+      <div class="viewer-notice">
+        <i class="fa-solid fa-eye"></i>
+        <span>Modo solo lectura — no tienes permisos para modificar clientes.</span>
+      </div>
+
+      <div class="form-container admin-only">
         <div class="form-grid" style="grid-template-columns: 2fr 1fr;">
           <div class="form-group">
             <label for="nombreCliente">Nombre Completo</label>
@@ -154,29 +333,45 @@
       <h1>Cotizaciones</h1>
       <p class="section-subtitle">Genera cotizaciones formales para tus clientes registrados.</p>
 
+      <!-- Aviso para usuarios con solo lectura -->
+      <div class="viewer-notice">
+        <i class="fa-solid fa-eye"></i>
+        <span>Modo solo lectura — puedes crear cotizaciones del catálogo, pero no puedes modificar precios ni eliminar cotizaciones.</span>
+      </div>
+
       <div class="quote-builder-container">
         <!-- Columna Izquierda: Formulario e Items -->
         <div class="quote-builder-form">
           <!-- Cliente -->
           <div class="form-container">
             <h3 class="form-section-title"><i class="fa-solid fa-user" style="color: var(--accent);"></i> 1. Seleccionar Cliente</h3>
-            <div class="form-group" style="margin-top: 10px;">
+            <div class="form-group" style="margin-top: 10px;" id="clienteCotizacionContainer">
               <label for="clienteCotizacion">Cliente</label>
               <select id="clienteCotizacion">
                 <option value="">Seleccione un cliente...</option>
                 <!-- Opciones dinámicas de clientes -->
               </select>
             </div>
+            <div class="form-group" style="margin-top: 10px; display: none;" id="clienteCotizacionReadonly">
+              <label>Cliente</label>
+              <div id="clienteNombreReadonly" style="padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border: 1px solid var(--border-color); color: #fff; font-weight: 500;">
+                Cliente
+              </div>
+            </div>
           </div>
 
           <!-- Selector y carga de Conceptos -->
           <div class="form-container" style="margin-top: 20px;">
-            <h3 class="form-section-title"><i class="fa-solid fa-cart-plus" style="color: var(--success);"></i> 2. Agregar Elementos</h3>
-            
+            <h3 class="form-section-title"><i class="fa-solid fa-cart-plus" style="color: var(--success);"></i> 2.
+              Agregar Elementos</h3>
+
             <div class="tabs-conceptos">
-              <button id="tab-cat" class="tab-btn active" onclick="switchTab('catalogo')"><i class="fa-solid fa-box"></i> Catálogo</button>
-              <button id="tab-pers" class="tab-btn" onclick="switchTab('personalizado')"><i class="fa-solid fa-keyboard"></i> Personalizado</button>
-              <button id="tab-mano" class="tab-btn" onclick="switchTab('mano_obra')"><i class="fa-solid fa-wrench"></i> Mano de Obra</button>
+              <button id="tab-cat" class="tab-btn active" onclick="switchTab('catalogo')"><i
+                  class="fa-solid fa-box"></i> Catálogo</button>
+              <button id="tab-pers" class="tab-btn admin-only" onclick="switchTab('personalizado')"><i
+                  class="fa-solid fa-keyboard"></i> Personalizado</button>
+              <button id="tab-mano" class="tab-btn admin-only" onclick="switchTab('mano_obra')"><i class="fa-solid fa-wrench"></i>
+                Mano de Obra</button>
             </div>
 
             <!-- Form 1: Catálogo -->
@@ -188,10 +383,12 @@
                     <option value="">Seleccione un producto...</option>
                   </select>
                 </div>
-                
+
                 <div class="product-info-panel" id="prodInfoPanel" style="display: none;">
-                  <span class="info-badge price"><i class="fa-solid fa-tags"></i> Precio: <span id="prodInfoPrecio">RD$ 0.00</span></span>
-                  <span class="info-badge stock" id="prodInfoStockBadge"><i class="fa-solid fa-warehouse"></i> Stock: <span id="prodInfoStock">0</span> unidades</span>
+                  <span class="info-badge price"><i class="fa-solid fa-tags"></i> Precio: <span id="prodInfoPrecio">RD$
+                      0.00</span></span>
+                  <span class="info-badge stock" id="prodInfoStockBadge"><i class="fa-solid fa-warehouse"></i> Stock:
+                    <span id="prodInfoStock">0</span> unidades</span>
                 </div>
 
                 <div class="form-grid-2col">
@@ -204,7 +401,7 @@
                     <input type="number" id="prodCatPrecio" placeholder="0.00" min="0" step="any">
                   </div>
                 </div>
-                
+
                 <button type="button" onclick="agregarItemCatalogo()" style="margin-top: 10px;">
                   <i class="fa-solid fa-circle-plus"></i> Agregar Producto
                 </button>
@@ -239,7 +436,8 @@
               <div class="form-grid-vertical">
                 <div class="form-group">
                   <label for="manoObraDesc">Descripción de la Mano de Obra</label>
-                  <input type="text" id="manoObraDesc" placeholder="Ej: Instalación de 4 cámaras y configuración de DVR">
+                  <input type="text" id="manoObraDesc"
+                    placeholder="Ej: Instalación de 4 cámaras y configuración de DVR">
                 </div>
                 <div class="form-group">
                   <label for="manoObraCosto">Costo de la Mano de Obra (RD$)</label>
@@ -256,15 +454,20 @@
         <!-- Columna Derecha: Detalle de Cotización -->
         <div class="quote-builder-preview">
           <div class="form-container" style="height: 100%; display: flex; flex-direction: column;">
-            <h3 class="form-section-title"><i class="fa-solid fa-file-invoice" style="color: var(--warning);"></i> 3. Resumen de la Cotización</h3>
-            
-            <div id="borradorEmptyMsg" style="text-align: center; color: var(--text-secondary); padding: 40px 10px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-              <i class="fa-solid fa-calculator" style="font-size: 2.5rem; color: var(--border-color); margin-bottom: 15px;"></i>
+            <h3 class="form-section-title"><i class="fa-solid fa-file-invoice" style="color: var(--warning);"></i> 3.
+              Resumen de la Cotización</h3>
+
+            <div id="borradorEmptyMsg"
+              style="text-align: center; color: var(--text-secondary); padding: 40px 10px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+              <i class="fa-solid fa-calculator"
+                style="font-size: 2.5rem; color: var(--border-color); margin-bottom: 15px;"></i>
               <p>Agrega productos o mano de obra para ver el desglose en esta sección.</p>
             </div>
 
-            <div id="borradorDetalle" style="display: none; flex-grow: 1; flex-direction: column; justify-content: space-between;">
-              <div class="table-container" style="margin-top: 15px; margin-bottom: 15px; border-radius: 10px; max-height: 250px; overflow-y: auto;">
+            <div id="borradorDetalle"
+              style="display: none; flex-grow: 1; flex-direction: column; justify-content: space-between;">
+              <div class="table-container"
+                style="margin-top: 15px; margin-bottom: 15px; border-radius: 10px; max-height: 250px; overflow-y: auto;">
                 <table class="table-compact">
                   <thead>
                     <tr>
@@ -297,7 +500,8 @@
                 <div class="total-row">
                   <span style="display: flex; align-items: center; gap: 8px;">
                     ITBIS (18%):
-                    <input type="checkbox" id="aplicarItbis" checked onchange="calcularTotalesBorrador()" style="width: auto; cursor: pointer; margin: 0;">
+                    <input type="checkbox" id="aplicarItbis" checked onchange="calcularTotalesBorrador()"
+                      style="width: auto; cursor: pointer; margin: 0;">
                   </span>
                   <span id="totItbis">RD$ 0.00</span>
                 </div>
@@ -308,7 +512,8 @@
               </div>
 
               <!-- Botones de Acción -->
-              <div class="borrador-actions" style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div class="borrador-actions"
+                style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <button class="btn-danger" type="button" onclick="limpiarBorrador()">
                   <i class="fa-solid fa-trash-can"></i> Limpiar
                 </button>
@@ -321,12 +526,12 @@
         </div>
       </div>
 
-      <h2 style="font-size: 1.2rem; color: #fff; margin-top: 40px; margin-bottom: 15px;"><i class="fa-solid fa-clock-rotate-left" style="color: var(--accent);"></i> Historial de Cotizaciones</h2>
+      <h2 style="font-size: 1.2rem; color: #fff; margin-top: 40px; margin-bottom: 15px;"><i
+          class="fa-solid fa-clock-rotate-left" style="color: var(--accent);"></i> Historial de Cotizaciones</h2>
       <ul id="listaCotizaciones" class="modern-list">
         <!-- Dinámico desde JS -->
       </ul>
     </section>
-
     <!-- Sección: Reportes -->
     <section id="reportes" class="pagina oculto">
       <h1>Reportes & Estadísticas</h1>
@@ -365,14 +570,38 @@
       </div>
 
       <div class="form-container">
-        <h2 style="font-size: 1.2rem; margin-bottom: 20px; color: #fff;"><i class="fa-solid fa-warehouse" style="color: var(--warning);"></i> Estado del Inventario</h2>
+        <h2 style="font-size: 1.2rem; margin-bottom: 20px; color: #fff;"><i class="fa-solid fa-warehouse"
+            style="color: var(--warning);"></i> Estado del Inventario</h2>
         <div id="reporteInventario">
           <!-- Detalles dinámicos como productos fuera de stock -->
         </div>
       </div>
     </section>
 
-  <!-- Biblioteca jsPDF para descargas de PDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Sección: Videos de Instalaciones -->
+    <section id="videos" class="pagina oculto">
+      <h1>Videos de Instalaciones</h1>
+      <p class="section-subtitle">Mira nuestras instalaciones y proyectos realizados.</p>
+      <div class="video-gallery" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 10px;">
+        <!-- Dinámico desde JS -->
+      </div>
+      <div id="videoEmptyMsg" style="text-align: center; color: var(--text-secondary); padding: 40px 10px;">
+        <i class="fa-solid fa-film" style="font-size: 3rem; color: var(--border-color); margin-bottom: 15px; display: block;"></i>
+        <p>Aún no hay videos subidos. Sube un video usando el botón de abajo.</p>
+      </div>
+      <div class="video-upload admin-only" style="text-align:center; margin-top:20px;">
+        <input type="file" id="videoFileInput" accept="video/*" multiple style="display:none;" />
+        <button id="uploadVideoBtn" style="display: inline-flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-upload"></i> Subir Video(s)
+        </button>
+      </div>
+    </section>
+  </main>
+
+<!-- Biblioteca jsPDF para descargas de PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<a href="https://wa.me/18094393928?text=Hola,%20me%20gustar%C3%ADa%20recibir%20informaci%C3%B3n."
+   class="whatsapp-float" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
 </body>
+
 </html>
