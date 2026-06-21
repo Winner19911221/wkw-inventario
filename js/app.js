@@ -2256,10 +2256,25 @@ window.addEventListener('DOMContentLoaded', () => {
   let firebaseVideosRef = null;
   let fbUnsubscribe = null; // Listener cleanup
 
+  const DEFAULT_FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDQECspP0iYgqTHVDTbkuHkO6A2G_eg2bE",
+    authDomain: "wkw-inventario.firebaseapp.com",
+    databaseURL: "https://wkw-inventario-default-rtdb.firebaseio.com",
+    projectId: "wkw-inventario",
+    storageBucket: "wkw-inventario.appspot.com",
+    appId: "1:686142093955:web:f2fc77a86f0412788ab9b6"
+  };
+
   function getFirebaseConfig() {
     const raw = localStorage.getItem('wkw_firebase_config');
-    if (!raw) return null;
-    try { return JSON.parse(raw); } catch { return null; }
+    if (!raw) return DEFAULT_FIREBASE_CONFIG;
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.databaseURL) return DEFAULT_FIREBASE_CONFIG;
+      return parsed;
+    } catch {
+      return DEFAULT_FIREBASE_CONFIG;
+    }
   }
 
   async function initFirebase() {
