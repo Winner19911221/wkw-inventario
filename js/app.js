@@ -1421,7 +1421,7 @@ function actualizarUI() {
 
 // --- FUNCIONES DE LOGIN / LOGOUT ---
 
-function handleLogin(event) {
+async function handleLogin(event) {
   event.preventDefault();
 
   const userInput = document.getElementById('loginUser');
@@ -1433,48 +1433,71 @@ function handleLogin(event) {
   // Limpiar error previo
   errorDiv.classList.remove('visible');
 
-  const result = login(userInput.value, passInput.value);
-
-  if (result.success) {
+  if (loginBtn) {
+    loginBtn.disabled = true;
     loginBtn.classList.add('loading');
     loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Ingresando...';
+  }
 
-    setTimeout(() => {
-      // Ocultar login y mostrar app
-      const loginScreen = document.getElementById('loginScreen');
-      const sidebar = document.querySelector('.sidebar');
-      const contenido = document.querySelector('.contenido');
+  try {
+    const result = await login(userInput.value, passInput.value);
 
-      if (loginScreen) loginScreen.classList.add('hidden');
-      if (sidebar) sidebar.style.display = '';
-      if (contenido) contenido.style.display = '';
+    if (result.success) {
+      setTimeout(() => {
+        // Ocultar login y mostrar app
+        const loginScreen = document.getElementById('loginScreen');
+        const sidebar = document.querySelector('.sidebar');
+        const contenido = document.querySelector('.contenido');
 
-      applyRoleRestrictions();
-      
-      const session = getSession();
-      if (session && session.role === 'cliente') {
-        mostrar('productos');
-      } else {
-        mostrar('dashboard');
+        if (loginScreen) loginScreen.classList.add('hidden');
+        if (sidebar) sidebar.style.display = '';
+        if (contenido) contenido.style.display = '';
+
+        applyRoleRestrictions();
+        
+        const session = getSession();
+        if (session && session.role === 'cliente') {
+          mostrar('productos');
+        } else {
+          mostrar('dashboard');
+        }
+
+        actualizarUI();
+
+        // Resetear formulario
+        if (loginBtn) {
+          loginBtn.disabled = false;
+          loginBtn.classList.remove('loading');
+          loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión';
+        }
+        userInput.value = '';
+        passInput.value = '';
+      }, 600);
+    } else {
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.classList.remove('loading');
+        loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión';
       }
+      errorMsg.textContent = result.error;
+      errorDiv.classList.add('visible');
 
-      actualizarUI();
-
-      // Resetear formulario
+      // Shake animation
+      const card = document.querySelector('.login-card');
+      if (card) {
+        card.style.animation = 'none';
+        card.offsetHeight; // trigger reflow
+        card.style.animation = 'shake 0.5s ease';
+      }
+    }
+  } catch (err) {
+    if (loginBtn) {
+      loginBtn.disabled = false;
       loginBtn.classList.remove('loading');
       loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión';
-      userInput.value = '';
-      passInput.value = '';
-    }, 600);
-  } else {
-    errorMsg.textContent = result.error;
+    }
+    errorMsg.textContent = 'Error de conexión: ' + err.message;
     errorDiv.classList.add('visible');
-
-    // Shake animation
-    const card = document.querySelector('.login-card');
-    card.style.animation = 'none';
-    card.offsetHeight; // trigger reflow
-    card.style.animation = 'shake 0.5s ease';
   }
 }
 
@@ -2143,7 +2166,7 @@ function showLoginForm(event) {
   if (subtitle) subtitle.innerText = 'Accede al panel de inventario';
 }
 
-function handleRegister(event) {
+async function handleRegister(event) {
   event.preventDefault();
   
   const nameInput = document.getElementById('regName');
@@ -2161,26 +2184,22 @@ function handleRegister(event) {
   const pass = passInput.value;
   const role = roleSelect ? roleSelect.value : 'cliente';
   
-  const result = registerUser(name, user, pass, role);
-  
-  if (result.success) {
-    if (regBtn) {
-      regBtn.classList.add('loading');
-      regBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...';
-    }
+  if (regBtn) {
+    regBtn.disabled = true;
+    regBtn.classList.add('loading');
+    regBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...';
+  }
+
+  try {
+    const result = await registerUser(name, user, pass, role);
     
-    setTimeout(() => {
+    if (result.success) {
       alert('¡Registro exitoso! Ya puedes iniciar sesión.');
       
       // Limpiar campos
       nameInput.value = '';
       userInput.value = '';
       passInput.value = '';
-      
-      if (regBtn) {
-        regBtn.classList.remove('loading');
-        regBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Registrarse';
-      }
       
       // Mostrar login
       showLoginForm();
@@ -2192,17 +2211,26 @@ function handleRegister(event) {
         const loginPass = document.getElementById('loginPass');
         if (loginPass) loginPass.focus();
       }
-    }, 800);
-  } else {
-    if (errorMsg) errorMsg.textContent = result.error;
+    } else {
+      if (errorMsg) errorMsg.textContent = result.error;
+      if (errorDiv) errorDiv.classList.add('visible');
+      
+      // Shake animation
+      const card = document.querySelector('.login-card');
+      if (card) {
+        card.style.animation = 'none';
+        card.offsetHeight; // trigger reflow
+        card.style.animation = 'shake 0.5s ease';
+      }
+    }
+  } catch (err) {
+    if (errorMsg) errorMsg.textContent = 'Error de conexión: ' + err.message;
     if (errorDiv) errorDiv.classList.add('visible');
-    
-    // Shake animation
-    const card = document.querySelector('.login-card');
-    if (card) {
-      card.style.animation = 'none';
-      card.offsetHeight; // trigger reflow
-      card.style.animation = 'shake 0.5s ease';
+  } finally {
+    if (regBtn) {
+      regBtn.disabled = false;
+      regBtn.classList.remove('loading');
+      regBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Registrarse';
     }
   }
 }

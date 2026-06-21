@@ -1,5 +1,5 @@
 // =============================================
-// AUTH SYSTEM — WKW Security
+// AUTH SYSTEM — WKW Security (with Firebase Realtime Database)
 // =============================================
 
 // Credenciales hardcoded (sin backend)
@@ -9,11 +9,84 @@ const USERS = [
   { username: 'cliente', password: 'cliente123', role: 'cliente', displayName: 'Cliente' }
 ];
 
+// Configuración de Firebase
+let firebaseApp = null;
+let firebaseDB  = null;
+
+const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDQECspP0iYgqTHVDTbkuHkO6A2G_eg2bE",
+  authDomain: "wkw-inventario.firebaseapp.com",
+  databaseURL: "https://wkw-inventario-default-rtdb.firebaseio.com",
+  projectId: "wkw-inventario",
+  storageBucket: "wkw-inventario.appspot.com",
+  appId: "1:686142093955:web:f2fc77a86f0412788ab9b6"
+};
+
+function getFirebaseConfig() {
+  const raw = localStorage.getItem('wkw_firebase_config');
+  if (!raw) return DEFAULT_FIREBASE_CONFIG;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.databaseURL) return DEFAULT_FIREBASE_CONFIG;
+    return parsed;
+  } catch {
+    return DEFAULT_FIREBASE_CONFIG;
+  }
+}
+
+async function initAuthFirebase() {
+  if (firebaseDB) return true;
+  const cfg = getFirebaseConfig();
+  if (!cfg || !cfg.databaseURL) return false;
+
+  try {
+    const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+    const { getDatabase } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js');
+
+    if (getApps().length === 0) {
+      firebaseApp = initializeApp(cfg);
+    } else {
+      firebaseApp = getApps()[0];
+    }
+
+    firebaseDB = getDatabase(firebaseApp);
+    return true;
+  } catch (err) {
+    console.error('Firebase Auth init error:', err);
+    return false;
+  }
+}
+
+/**
+ * Sincroniza los usuarios registrados desde Firebase en LocalStorage.
+ */
+export async function syncUsersFromFirebase() {
+  const ok = await initAuthFirebase();
+  if (!ok) return;
+
+  try {
+    const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js');
+    const usersRef = ref(firebaseDB, 'wkw_registered_users');
+    const snapshot = await get(usersRef);
+
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      const usersList = Object.values(data);
+      localStorage.setItem('wkw_registered_users', JSON.stringify(usersList));
+    }
+  } catch (err) {
+    console.error('Error syncing users from Firebase:', err);
+  }
+}
+
 /**
  * Intenta autenticar con usuario y contraseña.
- * @returns {{ success: boolean, user?: object, error?: string }}
+ * @returns {Promise<{ success: boolean, user?: object, error?: string }>}
  */
-export function login(username, password) {
+export async function login(username, password) {
+  // Intentar sincronizar usuarios primero para tener la lista actualizada
+  await syncUsersFromFirebase();
+
   const trimUser = username.trim().toLowerCase();
   const trimPass = password.trim();
 
@@ -43,10 +116,10 @@ export function login(username, password) {
 }
 
 /**
- * Registra un nuevo usuario en LocalStorage.
- * @returns {{ success: boolean, error?: string }}
+ * Registra un nuevo usuario en Firebase y LocalStorage.
+ * @returns {Promise<{ success: boolean, error?: string }>}
  */
-export function registerUser(name, username, password, role) {
+export async function registerUser(name, username, password, role) {
   const trimName = name.trim();
   const trimUser = username.trim().toLowerCase();
   const trimPass = password.trim();
@@ -54,6 +127,9 @@ export function registerUser(name, username, password, role) {
   if (!trimName || !trimUser || !trimPass) {
     return { success: false, error: 'Completa todos los campos.' };
   }
+
+  // Sincronizar primero para comprobar duplicados
+  await syncUsersFromFirebase();
 
   const registeredUsers = JSON.parse(localStorage.getItem('wkw_registered_users')) || [];
   const allUsers = [...USERS, ...registeredUsers];
@@ -70,6 +146,20 @@ export function registerUser(name, username, password, role) {
     displayName: trimName
   };
 
+  // Guardar en Firebase
+  const ok = await initAuthFirebase();
+  if (ok) {
+    try {
+      const { ref, push } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js');
+      const usersRef = ref(firebaseDB, 'wkw_registered_users');
+      await push(usersRef, newUser);
+    } catch (err) {
+      console.error('Error saving user to Firebase:', err);
+      // Continuamos para guardar localmente como fallback
+    }
+  }
+
+  // Guardar en LocalStorage
   registeredUsers.push(newUser);
   localStorage.setItem('wkw_registered_users', JSON.stringify(registeredUsers));
 
@@ -254,6 +344,8 @@ window.showRegisterForm = showRegisterForm;
  * Verifica si ya hay sesión activa; si no, muestra el login.
  */
 export function initAuth() {
+  syncUsersFromFirebase().catch(console.error);
+
   if (isLoggedIn()) {
     hideLoginScreen();
     applyRoleRestrictions();
