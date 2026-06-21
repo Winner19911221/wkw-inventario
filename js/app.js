@@ -2245,127 +2245,275 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Video handling variables
-  let videos = JSON.parse(localStorage.getItem('pro_videos')) || [];
-  const renderVideos = () => {
+  // =====================================================
+  // VIDEO GALLERY — Firebase Realtime Database
+  // Videos subidos por el admin son visibles para TODOS
+  // =====================================================
+
+  // Config Firebase (guardada en localStorage por el admin)
+  let firebaseApp = null;
+  let firebaseDB  = null;
+  let firebaseVideosRef = null;
+  let fbUnsubscribe = null; // Listener cleanup
+
+  function getFirebaseConfig() {
+    const raw = localStorage.getItem('wkw_firebase_config');
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+
+  async function initFirebase() {
+    const cfg = getFirebaseConfig();
+    if (!cfg || !cfg.databaseURL) return false;
+
+    try {
+      // Importar Firebase SDK v9 modular
+      const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+      const { getDatabase, ref, push, remove, onValue, off } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js');
+
+      // Evitar doble inicialización
+      if (getApps().length === 0) {
+        firebaseApp = initializeApp(cfg);
+      } else {
+        firebaseApp = getApps()[0];
+      }
+
+      firebaseDB = getDatabase(firebaseApp);
+      firebaseVideosRef = ref(firebaseDB, 'wkw_videos');
+
+      // Guardar funciones para uso posterior
+      window._fb = { ref, push, remove, onValue, off };
+      return true;
+    } catch (err) {
+      console.error('Firebase init error:', err);
+      return false;
+    }
+  }
+
+  // Render gallery from an array of video objects
+  const renderVideos = (videosList) => {
     const gallery = document.querySelector('#videos .video-gallery');
     const emptyMsg = document.getElementById('videoEmptyMsg');
     if (!gallery) return;
     gallery.innerHTML = '';
-    if (videos.length === 0) {
+
+    if (!videosList || videosList.length === 0) {
       if (emptyMsg) {
         emptyMsg.style.display = 'block';
         const pMsg = emptyMsg.querySelector('p');
-        if (pMsg) {
-          if (isAdmin()) {
-            pMsg.textContent = 'Aún no hay videos subidos. Sube un video usando el botón de abajo.';
-          } else {
-            pMsg.textContent = 'Aún no hay videos subidos.';
-          }
-        }
+        if (pMsg) pMsg.textContent = isAdmin()
+          ? 'Aún no hay videos subidos. Sube un video usando el botón de abajo.'
+          : 'Aún no hay videos publicados por el administrador.';
       }
-    } else {
-      if (emptyMsg) emptyMsg.style.display = 'none';
-      videos.forEach((v, idx) => {
-        const div = document.createElement('div');
-        div.className = 'video-item';
-        div.style.cssText = 'width:320px;background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;padding:10px;position:relative;';
-        
-        const deleteBtnHtml = isAdmin()
-          ? `<button onclick="eliminarVideo(${idx})" title="Eliminar video" style="position:absolute;top:8px;right:8px;background:var(--danger);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.8rem;"><i class="fa-solid fa-trash-can"></i></button>`
-          : '';
-
-        div.innerHTML = `<video controls preload="metadata" style="width:100%;border-radius:8px;">
-                           <source src="${v.dataUrl}" type="${v.type}">
-                         </video>
-                         <p style="margin-top:8px;color:var(--text-primary);font-weight:500;font-size:0.9rem;">${v.name}</p>
-                         ${deleteBtnHtml}`;
-        gallery.appendChild(div);
-      });
+      return;
     }
+
+    if (emptyMsg) emptyMsg.style.display = 'none';
+
+    videosList.forEach((v) => {
+      const div = document.createElement('div');
+      div.className = 'video-item';
+      div.style.cssText = `
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 14px;
+        position: relative;
+        transition: all 0.3s ease;
+        flex: 1 1 300px;
+        max-width: 400px;
+      `;
+
+      const deleteBtnHtml = isAdmin()
+        ? `<button onclick="eliminarVideo('${v.fbKey}')"
+             title="Eliminar video"
+             style="position:absolute;top:10px;right:10px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:var(--danger);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:0.8rem;display:flex;align-items:center;gap:4px;">
+             <i class="fa-solid fa-trash-can"></i>
+           </button>`
+        : '';
+
+      div.innerHTML = `
+        ${deleteBtnHtml}
+        <video controls preload="metadata"
+          style="width:100%;border-radius:10px;background:#000;max-height:220px;">
+          <source src="${v.dataUrl}" type="${v.type || 'video/mp4'}">
+          Tu navegador no soporta video.
+        </video>
+        <p style="margin-top:10px;color:var(--text-primary);font-weight:600;font-size:0.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${v.name}">
+          <i class="fa-solid fa-film" style="color:var(--accent);margin-right:6px;"></i>${v.name}
+        </p>
+        <p style="margin-top:2px;font-size:0.75rem;color:var(--text-secondary);">
+          <i class="fa-regular fa-calendar"></i> ${v.fecha || ''}
+        </p>
+      `;
+      gallery.appendChild(div);
+    });
   };
-  window.eliminarVideo = (idx) => {
+
+  // Subscribe to Firebase for real-time updates
+  async function subscribeToVideos() {
+    const ok = await initFirebase();
+
+    if (ok && firebaseVideosRef && window._fb) {
+      const { onValue } = window._fb;
+
+      // Detach previous listener if any
+      if (fbUnsubscribe) fbUnsubscribe();
+
+      fbUnsubscribe = onValue(firebaseVideosRef, (snapshot) => {
+        const data = snapshot.val();
+        if (!data) {
+          renderVideos([]);
+          return;
+        }
+        // Convert Firebase object to array keeping the key
+        const list = Object.entries(data).map(([key, val]) => ({
+          ...val,
+          fbKey: key
+        })).reverse(); // Newest first
+        renderVideos(list);
+      }, (err) => {
+        console.error('Firebase listen error:', err);
+        // Fallback to localStorage
+        const localVids = JSON.parse(localStorage.getItem('pro_videos')) || [];
+        renderVideos(localVids.map(v => ({ ...v, fbKey: null })));
+      });
+
+      return true;
+    } else {
+      // Firebase not configured — use localStorage (same device only)
+      const localVids = JSON.parse(localStorage.getItem('pro_videos')) || [];
+      renderVideos(localVids.map(v => ({ ...v, fbKey: null })));
+      return false;
+    }
+  }
+
+  // Delete video: from Firebase or localStorage
+  window.eliminarVideo = async (fbKey) => {
     if (!isAdmin()) {
       alert('No tienes permisos para eliminar videos.');
       return;
     }
-    if (confirm('¿Eliminar este video?')) {
-      videos.splice(idx, 1);
-      localStorage.setItem('pro_videos', JSON.stringify(videos));
-      renderVideos();
+    if (!confirm('¿Eliminar este video?')) return;
+
+    if (fbKey && firebaseVideosRef && window._fb) {
+      const { ref: fbRef, remove } = window._fb;
+      try {
+        const videoItemRef = fbRef(firebaseDB, `wkw_videos/${fbKey}`);
+        await remove(videoItemRef);
+        showToast('Video eliminado correctamente.');
+      } catch (err) {
+        alert('Error eliminando video: ' + err.message);
+      }
+    } else {
+      // localStorage fallback
+      let localVids = JSON.parse(localStorage.getItem('pro_videos')) || [];
+      // fbKey is index in this case
+      localVids.splice(parseInt(fbKey), 1);
+      localStorage.setItem('pro_videos', JSON.stringify(localVids));
+      renderVideos(localVids.map((v, i) => ({ ...v, fbKey: i })));
+      showToast('Video eliminado.');
     }
   };
-  // Initial render of stored videos
-  renderVideos();
+
+  // Save Firebase config from the UI form
+  window.guardarConfigFirebase = () => {
+    const apiKey        = document.getElementById('fbApiKey')?.value.trim();
+    const databaseURL   = document.getElementById('fbDatabaseURL')?.value.trim();
+    const projectId     = document.getElementById('fbProjectId')?.value.trim();
+    const appId         = document.getElementById('fbAppId')?.value.trim();
+
+    if (!apiKey || !databaseURL || !projectId || !appId) {
+      alert('Por favor, completa todos los campos de Firebase.');
+      return;
+    }
+
+    const cfg = { apiKey, authDomain: `${projectId}.firebaseapp.com`, databaseURL, projectId, storageBucket: `${projectId}.appspot.com`, appId };
+    localStorage.setItem('wkw_firebase_config', JSON.stringify(cfg));
+
+    const statusEl = document.getElementById('firebaseStatusMsg');
+    if (statusEl) { statusEl.style.display = 'flex'; setTimeout(() => statusEl.style.display = 'none', 3000); }
+
+    // Re-subscribe with new config
+    firebaseApp = null; firebaseDB = null; firebaseVideosRef = null;
+    subscribeToVideos();
+  };
+
+  // Initialize Firebase config inputs from saved config
+  function initFirebaseInputs() {
+    const cfg = getFirebaseConfig();
+    if (!cfg) return;
+    if (document.getElementById('fbApiKey'))      document.getElementById('fbApiKey').value      = cfg.apiKey      || '';
+    if (document.getElementById('fbDatabaseURL')) document.getElementById('fbDatabaseURL').value = cfg.databaseURL || '';
+    if (document.getElementById('fbProjectId'))   document.getElementById('fbProjectId').value   = cfg.projectId   || '';
+    if (document.getElementById('fbAppId'))       document.getElementById('fbAppId').value       = cfg.appId       || '';
+  }
+  initFirebaseInputs();
+
+  // Start real-time video subscription
+  subscribeToVideos();
+
   // Video upload handling
   const videoInput = document.getElementById('videoFileInput');
-  const uploadBtn = document.getElementById('uploadVideoBtn');
+  const uploadBtn  = document.getElementById('uploadVideoBtn');
+
   if (videoInput && uploadBtn) {
     uploadBtn.addEventListener('click', () => {
-      if (!isAdmin()) {
-        alert('No tienes permisos para subir videos.');
-        return;
-      }
+      if (!isAdmin()) { alert('No tienes permisos para subir videos.'); return; }
       videoInput.click();
     });
+
     videoInput.addEventListener('change', async (e) => {
-      if (!isAdmin()) {
-        alert('No tienes permisos para subir videos.');
-        return;
-      }
+      if (!isAdmin()) { alert('No tienes permisos para subir videos.'); return; }
       const files = Array.from(e.target.files);
       if (files.length === 0) return;
 
       const isCloudConfigured = cloudinaryCloudName && cloudinaryUploadPreset;
+      const isFbConfigured    = !!getFirebaseConfig();
 
       if (!isCloudConfigured) {
-        const confirmLocal = confirm(
-          'Cloudinary no está configurado. ¿Deseas subir el video usando el almacenamiento local del navegador (puede causar errores si el archivo es muy grande)?'
-        );
-        if (!confirmLocal) {
-          videoInput.value = '';
-          return;
-        }
+        alert('Cloudinary no está configurado. Por favor configura Cloudinary antes de subir videos para que sean compartidos.');
+        videoInput.value = '';
+        return;
+      }
 
-        // Fallback local (base64 en localStorage)
-        let processedCount = 0;
-        files.forEach(file => {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            const dataUrl = event.target.result;
-            videos.push({ name: file.name, type: file.type, dataUrl });
-            processedCount++;
-            if (processedCount === files.length) {
-              localStorage.setItem('pro_videos', JSON.stringify(videos));
-              renderVideos();
-              videoInput.value = '';
-            }
-          };
-          reader.readAsDataURL(file);
-        });
-      } else {
-        // Subida a Cloudinary con indicador de carga
-        const originalHtml = uploadBtn.innerHTML;
-        uploadBtn.disabled = true;
-        uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo video...';
+      // Upload to Cloudinary then save URL to Firebase (or localStorage)
+      const originalHtml = uploadBtn.innerHTML;
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
 
-        try {
-          for (const file of files) {
-            const videoUrl = await uploadFileToCloudinary(file, 'video');
-            videos.push({ name: file.name, type: file.type, dataUrl: videoUrl });
+      try {
+        const fecha = new Date().toLocaleDateString('es-DO');
+
+        for (const file of files) {
+          const videoUrl = await uploadFileToCloudinary(file, 'video');
+          const videoData = { name: file.name, type: file.type, dataUrl: videoUrl, fecha };
+
+          if (isFbConfigured && firebaseVideosRef && window._fb) {
+            // Save to Firebase — visible to ALL users
+            const { push } = window._fb;
+            await push(firebaseVideosRef, videoData);
+          } else {
+            // Fallback: localStorage (same device only)
+            const localVids = JSON.parse(localStorage.getItem('pro_videos')) || [];
+            localVids.push(videoData);
+            localStorage.setItem('pro_videos', JSON.stringify(localVids));
+            renderVideos(localVids.map((v, i) => ({ ...v, fbKey: i })));
           }
-          localStorage.setItem('pro_videos', JSON.stringify(videos));
-          renderVideos();
-          alert('¡Video(s) subido(s) con éxito a Cloudinary!');
-        } catch (error) {
-          console.error(error);
-          alert('Error al subir video(s): ' + error.message);
-        } finally {
-          uploadBtn.disabled = false;
-          uploadBtn.innerHTML = originalHtml;
-          videoInput.value = '';
         }
+
+        showToast(isFbConfigured
+          ? '✓ Video(s) subidos y visibles para todos los usuarios.'
+          : '✓ Video subido (solo visible en este dispositivo — configura Firebase para compartir).');
+      } catch (err) {
+        console.error(err);
+        alert('Error al subir video: ' + err.message);
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = originalHtml;
+        videoInput.value = '';
       }
     });
   }
 });
+

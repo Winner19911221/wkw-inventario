@@ -227,7 +227,54 @@
           <i class="fa-solid fa-circle-check"></i> <span>Configuración guardada correctamente.</span>
         </div>
       </div>
+
+      <!-- Configuración de Firebase (Admin Only) -->
+      <div class="form-container admin-only" style="margin-top: 24px; border: 1px solid rgba(251, 146, 60, 0.3); background: rgba(251, 146, 60, 0.04);">
+        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
+          <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(251,146,60,0.12); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="fa-solid fa-database" style="color: #fb923c; font-size: 1.2rem;"></i>
+          </div>
+          <div>
+            <h2 style="font-size: 1.1rem; color: #fff; margin: 0;">Firebase — Videos compartidos para todos los usuarios</h2>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 3px 0 0;">Sin Firebase, los videos solo se ven en el dispositivo del administrador.</p>
+          </div>
+        </div>
+
+        <div style="background: rgba(251,146,60,0.07); border: 1px solid rgba(251,146,60,0.2); border-radius: 10px; padding: 14px; margin-bottom: 16px; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6;">
+          <strong style="color: #fb923c;"><i class="fa-solid fa-circle-info"></i> ¿Cómo configurar?</strong><br>
+          1. Ve a <a href="https://console.firebase.google.com" target="_blank" style="color: #fb923c;">console.firebase.google.com</a> → Crea un proyecto gratuito.<br>
+          2. En <strong>Realtime Database</strong> → Crear base de datos → Selecciona región → Reglas: modo de prueba.<br>
+          3. En <strong>Configuración del proyecto</strong> → Tus apps → Web → Copia los datos de la config.<br>
+          4. Pega los datos aquí y haz clic en <strong>Guardar</strong>.
+        </div>
+
+        <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+          <div class="form-group">
+            <label for="fbApiKey" style="color: #fff; font-weight: 500; margin-bottom: 6px; display: block;">API Key</label>
+            <input type="text" id="fbApiKey" placeholder="AIzaSy..." style="width: 100%;" />
+          </div>
+          <div class="form-group">
+            <label for="fbDatabaseURL" style="color: #fff; font-weight: 500; margin-bottom: 6px; display: block;">Database URL</label>
+            <input type="text" id="fbDatabaseURL" placeholder="https://tu-proyecto-default-rtdb.firebaseio.com" style="width: 100%;" />
+          </div>
+          <div class="form-group">
+            <label for="fbProjectId" style="color: #fff; font-weight: 500; margin-bottom: 6px; display: block;">Project ID</label>
+            <input type="text" id="fbProjectId" placeholder="tu-proyecto-12345" style="width: 100%;" />
+          </div>
+          <div class="form-group">
+            <label for="fbAppId" style="color: #fff; font-weight: 500; margin-bottom: 6px; display: block;">App ID</label>
+            <input type="text" id="fbAppId" placeholder="1:123456789:web:abc..." style="width: 100%;" />
+          </div>
+        </div>
+        <button onclick="guardarConfigFirebase()" style="margin-top: 14px; background: #fb923c; color: #fff; border: none; padding: 10px 22px; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar y Conectar Firebase
+        </button>
+        <div id="firebaseStatusMsg" style="margin-top: 12px; font-size: 0.85rem; color: #fb923c; display: none; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-circle-check"></i> <span>Firebase conectado — los videos ahora son visibles para todos los usuarios.</span>
+        </div>
+      </div>
     </section>
+
 
     <!-- Sección: Productos -->
     <section id="productos" class="pagina oculto">
