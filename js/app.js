@@ -440,7 +440,7 @@ function actualizarProductosTable() {
 
     tbody.innerHTML += `
       <tr>
-        <td>
+        <td data-label="Producto">
           <div style="display: flex; align-items: center; gap: 12px;">
             <img src="${p.imagen}" alt="${p.nombre}" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border-color);">
             <div>
@@ -449,16 +449,16 @@ function actualizarProductosTable() {
             </div>
           </div>
         </td>
-        <td>
+        <td data-label="Precio">
           ${formatCurrency(p.precio)}
           ${isAdmin() ? `<button class="btn-success" onclick="modificarPrecio('${p.id}')" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px;" title="Modificar Precio"><i class="fa-solid fa-dollar-sign"></i></button>` : ''}
         </td>
-        <td>
-          ${p.stock} unidades
+        <td data-label="Stock">
+          ${p.stock} uds
           ${isAdmin() ? `<button class="btn-success" onclick="aumentarStock('${p.id}')" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px;">+</button>` : ''}
         </td>
-        <td>${statusBadge}</td>
-        <td style="text-align: center; white-space: nowrap;">
+        <td data-label="Estado">${statusBadge}</td>
+        <td data-label="Acciones" style="text-align: center; white-space: nowrap;">
           <div style="display: flex; gap: 8px; justify-content: center;">
             ${addCartBtn}
             ${deleteBtn}
@@ -2048,12 +2048,12 @@ function actualizarVentasList() {
 
     lista.innerHTML += `
       <tr>
-        <td style="font-weight: 600; color: var(--accent);">#${v.id.toUpperCase().substr(1, 6)}</td>
-        <td>${v.fecha}</td>
-        <td>${v.clienteNombre}</td>
-        <td title="${conceptosText}">${displayConceptos}</td>
-        <td style="text-align: right; font-weight: 600; color: var(--success);">${formatCurrency(v.total)}</td>
-        <td style="text-align: center; white-space: nowrap;">
+        <td data-label="ID" style="font-weight: 600; color: var(--accent);">#${v.id.toUpperCase().substr(1, 6)}</td>
+        <td data-label="Fecha">${v.fecha}</td>
+        <td data-label="Cliente">${v.clienteNombre}</td>
+        <td data-label="Conceptos" title="${conceptosText}">${displayConceptos}</td>
+        <td data-label="Total" style="text-align: right; font-weight: 600; color: var(--success);">${formatCurrency(v.total)}</td>
+        <td data-label="Acciones" style="text-align: center; white-space: nowrap;">
           <div style="display: inline-flex; gap: 8px;">
             <button onclick="descargarFacturaPDF('${v.id}')" style="padding: 6px 12px; font-size: 0.85rem; background-color: var(--success); color: white; display: inline-flex; align-items: center; gap: 6px;" title="Descargar Factura PDF">
               <i class="fa-solid fa-file-pdf"></i> PDF

@@ -109,8 +109,16 @@
     </div>
   </div>
 
+  <!-- Hamburger Button (mobile) -->
+  <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleSidebar()" title="Menú" aria-label="Abrir menú">
+    <i class="fa-solid fa-bars" id="hamburgerIcon"></i>
+  </button>
+
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
   <!-- Sidebar / Barra Lateral -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="mainSidebar">
     <div class="logo-container">
       <img src="logo.png" alt="WKW Logo" class="sidebar-logo">
     </div>
@@ -283,7 +291,7 @@
       </div>
 
       <div class="table-container">
-        <table>
+        <table id="tablaProductosTable">
           <thead>
             <tr>
               <th>Producto</th>
@@ -654,7 +662,7 @@
 
       <!-- Tabla de Ventas -->
       <div class="table-container">
-        <table>
+        <table id="tablaVentasTable">
           <thead>
             <tr>
               <th>Factura ID</th>
@@ -672,6 +680,30 @@
       </div>
     </section>
   </main>
+
+  <!-- Bottom Navigation Bar (mobile only) -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="bottom-nav-item" id="bnav-dashboard" onclick="mostrar('dashboard'); setActiveBottomNav('bnav-dashboard')">
+      <i class="fa-solid fa-chart-line"></i>
+      <span>Dashboard</span>
+    </button>
+    <button class="bottom-nav-item" id="bnav-productos" onclick="mostrar('productos'); setActiveBottomNav('bnav-productos')">
+      <i class="fa-solid fa-box"></i>
+      <span>Productos</span>
+    </button>
+    <button class="bottom-nav-item" id="bnav-cotizaciones" onclick="mostrar('cotizaciones'); setActiveBottomNav('bnav-cotizaciones')">
+      <i class="fa-solid fa-file-invoice-dollar"></i>
+      <span>Cotizar</span>
+    </button>
+    <button class="bottom-nav-item" id="bnav-ventas" onclick="mostrar('ventas'); setActiveBottomNav('bnav-ventas')">
+      <i class="fa-solid fa-cart-shopping"></i>
+      <span>Ventas</span>
+    </button>
+    <button class="bottom-nav-item" id="bnav-more" onclick="toggleSidebar()">
+      <i class="fa-solid fa-ellipsis"></i>
+      <span>Más</span>
+    </button>
+  </nav>
 
   <!-- Botón Flotante del Carrito -->
   <button id="floatingCartBtn" class="btn-float-cart" onclick="abrirCarrito()" title="Ver carrito">
@@ -747,6 +779,53 @@
 <script type="module" src="js/app.js"></script>
 <a href="https://wa.me/18094393928?text=Hola,%20me%20gustar%C3%ADa%20recibir%20informaci%C3%B3n."
    class="whatsapp-float" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
+
+<script>
+  /* ============================================
+     Mobile Sidebar Toggle
+     ============================================ */
+  function toggleSidebar() {
+    const sidebar = document.getElementById('mainSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const icon    = document.getElementById('hamburgerIcon');
+    const isOpen  = sidebar.classList.contains('open');
+    if (isOpen) {
+      closeSidebar();
+    } else {
+      sidebar.classList.add('open');
+      overlay.classList.add('active');
+      icon.className = 'fa-solid fa-xmark';
+    }
+  }
+
+  function closeSidebar() {
+    const sidebar = document.getElementById('mainSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const icon    = document.getElementById('hamburgerIcon');
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+    icon.className = 'fa-solid fa-bars';
+  }
+
+  /* Auto-close sidebar when a menu item is clicked on mobile */
+  document.addEventListener('DOMContentLoaded', () => {
+    const sidebarItems = document.querySelectorAll('.sidebar li');
+    sidebarItems.forEach(li => {
+      li.addEventListener('click', () => {
+        if (window.innerWidth <= 768) closeSidebar();
+      });
+    });
+  });
+
+  /* ============================================
+     Bottom Nav Active State
+     ============================================ */
+  function setActiveBottomNav(id) {
+    document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
+  }
+</script>
 </body>
 
 </html>

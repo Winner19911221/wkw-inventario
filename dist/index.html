@@ -32,8 +32,8 @@
   <link rel="canonical" href="https://winner19911221.github.io/wkw-inventario/">
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <script type="module" crossorigin src="/assets/index-LR_pAckC.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-_ox2ok_V.css">
+  <script type="module" crossorigin src="/assets/index-B7pNt-U1.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-5xSYlsnw.css">
 </head>
 
 <body>
@@ -108,8 +108,16 @@
     </div>
   </div>
 
+  <!-- Hamburger Button (mobile) -->
+  <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleSidebar()" title="Menú" aria-label="Abrir menú">
+    <i class="fa-solid fa-bars" id="hamburgerIcon"></i>
+  </button>
+
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
   <!-- Sidebar / Barra Lateral -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="mainSidebar">
     <div class="logo-container">
       <img src="/assets/logo-BEw-153h.png" alt="WKW Logo" class="sidebar-logo">
     </div>
@@ -125,6 +133,9 @@
       </li>
       <li id="menu-cotizaciones" onclick="mostrar('cotizaciones')">
         <i class="fa-solid fa-file-invoice-dollar"></i> Cotizaciones
+      </li>
+      <li id="menu-ventas" onclick="mostrar('ventas')">
+        <i class="fa-solid fa-cart-shopping"></i> Ventas
       </li>
       <li id="menu-videos" onclick="mostrar('videos')">
         <i class="fa-solid fa-video"></i> Videos
@@ -279,7 +290,7 @@
       </div>
 
       <div class="table-container">
-        <table>
+        <table id="tablaProductosTable">
           <thead>
             <tr>
               <th>Producto</th>
@@ -596,12 +607,223 @@
         </button>
       </div>
     </section>
+
+    <!-- Sección: Ventas / Compras -->
+    <section id="ventas" class="pagina oculto">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+        <div>
+          <h1 id="ventasTitle">Registro de Ventas</h1>
+          <p id="ventasSubtitle" class="section-subtitle" style="margin-bottom: 0;">Historial de transacciones facturadas y ventas completadas.</p>
+        </div>
+      </div>
+
+      <!-- Métricas de Ventas (Admin Only) -->
+      <div class="cards admin-only" style="margin-bottom: 30px;">
+        <div class="card" style="border-left: 4px solid var(--success);">
+          <div class="card-icon" style="background-color: var(--success-glow); color: var(--success);">
+            <i class="fa-solid fa-money-bill-trend-up"></i>
+          </div>
+          <div class="card-info">
+            <h3>Ingresos Totales</h3>
+            <p id="salesRevenue">RD$ 0.00</p>
+          </div>
+        </div>
+
+        <div class="card" style="border-left: 4px solid var(--accent);">
+          <div class="card-icon" style="background-color: var(--accent-glow); color: var(--accent);">
+            <i class="fa-solid fa-receipt"></i>
+          </div>
+          <div class="card-info">
+            <h3>Transacciones</h3>
+            <p id="salesCount">0</p>
+          </div>
+        </div>
+
+        <div class="card" style="border-left: 4px solid var(--warning);">
+          <div class="card-icon" style="background-color: rgba(245, 158, 11, 0.1); color: var(--warning);">
+            <i class="fa-solid fa-ticket"></i>
+          </div>
+          <div class="card-info">
+            <h3>Ticket Promedio</h3>
+            <p id="salesAverage">RD$ 0.00</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtro y Búsqueda -->
+      <div class="form-container" style="padding: 16px 24px; margin-bottom: 24px;">
+        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+          <div class="form-group" style="flex: 1; min-width: 250px; gap: 4px;">
+            <input type="text" id="buscarVentaInput" placeholder="Buscar por cliente o ID de factura..." oninput="filtrarVentas()" style="padding: 10px 14px; font-size: 0.9rem;" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de Ventas -->
+      <div class="table-container">
+        <table id="tablaVentasTable">
+          <thead>
+            <tr>
+              <th>Factura ID</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Conceptos</th>
+              <th style="text-align: right;">Total</th>
+              <th style="text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaVentas">
+            <!-- Dinámico desde JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
   </main>
+
+  <!-- Bottom Navigation Bar (mobile only) -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="bottom-nav-item" id="bnav-dashboard" onclick="mostrar('dashboard'); setActiveBottomNav('bnav-dashboard')">
+      <i class="fa-solid fa-chart-line"></i>
+      <span>Dashboard</span>
+    </button>
+    <button class="bottom-nav-item" id="bnav-productos" onclick="mostrar('productos'); setActiveBottomNav('bnav-productos')">
+      <i class="fa-solid fa-box"></i>
+      <span>Productos</span>
+    </button>
+    <button class="bottom-nav-item" id="bnav-cotizaciones" onclick="mostrar('cotizaciones'); setActiveBottomNav('bnav-cotizaciones')">
+      <i class="fa-solid fa-file-invoice-dollar"></i>
+      <span>Cotizar</span>
+    </button>
+    <button class="bottom-nav-item" id="bnav-ventas" onclick="mostrar('ventas'); setActiveBottomNav('bnav-ventas')">
+      <i class="fa-solid fa-cart-shopping"></i>
+      <span>Ventas</span>
+    </button>
+    <button class="bottom-nav-item" id="bnav-more" onclick="toggleSidebar()">
+      <i class="fa-solid fa-ellipsis"></i>
+      <span>Más</span>
+    </button>
+  </nav>
+
+  <!-- Botón Flotante del Carrito -->
+  <button id="floatingCartBtn" class="btn-float-cart" onclick="abrirCarrito()" title="Ver carrito">
+    <i class="fa-solid fa-cart-shopping"></i>
+    <span id="cartCountBadge" class="cart-badge" style="display: none;">0</span>
+  </button>
+
+  <!-- Overlay para cerrar el carrito al hacer click fuera -->
+  <div id="cartOverlay" class="cart-overlay" onclick="cerrarCarrito()"></div>
+
+  <!-- Panel Lateral del Carrito (Drawer) -->
+  <div id="cartDrawer" class="cart-drawer">
+    <div class="cart-drawer-header">
+      <h2><i class="fa-solid fa-cart-shopping" style="color: var(--accent);"></i> Tu Carrito</h2>
+      <button class="cart-drawer-close" onclick="cerrarCarrito()" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Lista de Items en el Carrito -->
+    <div class="cart-drawer-body" id="cartDrawerBody">
+      <!-- Dinámico desde JS -->
+    </div>
+
+    <!-- Pie del Carrito: Totales y Acciones -->
+    <div class="cart-drawer-footer">
+      <div class="resumen-totales" style="background: none; border: none; padding: 0;">
+        <div class="total-row">
+          <span>Subtotal:</span>
+          <span id="cartSubtotal">RD$ 0.00</span>
+        </div>
+        <div class="total-row">
+          <span style="display: flex; align-items: center; gap: 8px;">
+            ITBIS (18%):
+            <input type="checkbox" id="cartItbis" checked onchange="renderCarrito()" style="width: auto; cursor: pointer; margin: 0;">
+          </span>
+          <span id="cartItbisVal">RD$ 0.00</span>
+        </div>
+        <div class="total-row grand-total">
+          <span>TOTAL:</span>
+          <span id="cartTotal">RD$ 0.00</span>
+        </div>
+      </div>
+
+      <!-- Selección de Cliente (Admin Only / Cliente Read-only) -->
+      <div class="cart-client-select" id="cartClientSelectContainer" style="margin-top: 8px;">
+        <label for="cartCliente">Seleccionar Cliente para la Venta</label>
+        <select id="cartCliente" style="padding: 10px 14px; font-size: 0.9rem;">
+          <option value="">Seleccione un cliente...</option>
+        </select>
+      </div>
+      <div class="cart-client-select" id="cartClientReadonlyContainer" style="margin-top: 8px; display: none;">
+        <label>Cliente Facturado</label>
+        <div id="cartClienteReadonly" style="padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border: 1px solid var(--border-color); color: #fff; font-weight: 500; font-size: 0.9rem;">
+          Cliente
+        </div>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button class="btn-danger" onclick="vaciarCarrito()" style="flex: 1; padding: 12px;"><i class="fa-solid fa-trash-can"></i> Limpiar</button>
+        <button class="btn-checkout" onclick="confirmarVenta()" style="flex: 2; padding: 12px;"><i class="fa-solid fa-credit-card"></i> Procesar Venta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notificaciones (Micro-interacciones) -->
+  <div id="toastNotif" class="toast-notif">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toastNotifText">Producto agregado al carrito.</span>
+  </div>
 
 <!-- Biblioteca jsPDF para descargas de PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <a href="https://wa.me/18094393928?text=Hola,%20me%20gustar%C3%ADa%20recibir%20informaci%C3%B3n."
    class="whatsapp-float" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
+
+<script>
+  /* ============================================
+     Mobile Sidebar Toggle
+     ============================================ */
+  function toggleSidebar() {
+    const sidebar = document.getElementById('mainSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const icon    = document.getElementById('hamburgerIcon');
+    const isOpen  = sidebar.classList.contains('open');
+    if (isOpen) {
+      closeSidebar();
+    } else {
+      sidebar.classList.add('open');
+      overlay.classList.add('active');
+      icon.className = 'fa-solid fa-xmark';
+    }
+  }
+
+  function closeSidebar() {
+    const sidebar = document.getElementById('mainSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const icon    = document.getElementById('hamburgerIcon');
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+    icon.className = 'fa-solid fa-bars';
+  }
+
+  /* Auto-close sidebar when a menu item is clicked on mobile */
+  document.addEventListener('DOMContentLoaded', () => {
+    const sidebarItems = document.querySelectorAll('.sidebar li');
+    sidebarItems.forEach(li => {
+      li.addEventListener('click', () => {
+        if (window.innerWidth <= 768) closeSidebar();
+      });
+    });
+  });
+
+  /* ============================================
+     Bottom Nav Active State
+     ============================================ */
+  function setActiveBottomNav(id) {
+    document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
+  }
+</script>
 </body>
 
 </html>
