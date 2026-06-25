@@ -7,6 +7,19 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0B3D91">
   <title>WKW Security | Cámaras de Seguridad, CCTV, Redes e Inventario</title>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/wkw-inventario/sw.js', { scope: '/wkw-inventario/' })
+        .then(registration => {
+          console.log('Service Worker registrado con éxito:', registration);
+        })
+        .catch(error => {
+          console.error('Fallo en el registro del Service Worker:', error);
+        });
+    });
+  }
+</script>
 
   <meta name="description" content="WKW Security ofrece instalación de cámaras de seguridad, CCTV, DVR, NVR, control de acceso, redes, inventario y soluciones tecnológicas en República Dominicana.">
 
