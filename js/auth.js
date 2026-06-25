@@ -61,22 +61,31 @@ async function initAuthFirebase() {
  * Sincroniza los usuarios registrados desde Firebase en LocalStorage.
  */
 export async function syncUsersFromFirebase() {
-  const ok = await initAuthFirebase();
-  if (!ok) return;
+  // Wrap the entire sync in a 4-second timeout so a slow/unreachable
+  // Firebase never blocks the login button.
+  const timeoutPromise = new Promise(resolve => setTimeout(resolve, 4000));
 
-  try {
-    const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js');
-    const usersRef = ref(firebaseDB, 'wkw_registered_users');
-    const snapshot = await get(usersRef);
+  const syncPromise = (async () => {
+    const ok = await initAuthFirebase();
+    if (!ok) return;
 
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      const usersList = Object.values(data);
-      localStorage.setItem('wkw_registered_users', JSON.stringify(usersList));
+    try {
+      const { ref, get } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js');
+      const usersRef = ref(firebaseDB, 'wkw_registered_users');
+      const snapshot = await get(usersRef);
+
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const usersList = Object.values(data);
+        localStorage.setItem('wkw_registered_users', JSON.stringify(usersList));
+      }
+    } catch (err) {
+      console.warn('Error syncing users from Firebase (continuando con datos locales):', err);
     }
-  } catch (err) {
-    console.error('Error syncing users from Firebase:', err);
-  }
+  })();
+
+  // Race: whichever finishes first wins — login is never blocked longer than 4s
+  await Promise.race([syncPromise, timeoutPromise]);
 }
 
 /**
@@ -84,35 +93,43 @@ export async function syncUsersFromFirebase() {
  * @returns {Promise<{ success: boolean, user?: object, error?: string }>}
  */
 export async function login(username, password) {
-  // Intentar sincronizar usuarios primero para tener la lista actualizada
-  await syncUsersFromFirebase();
+  const trimUser = (username || '').trim().toLowerCase();
+  const trimPass = (password || '').trim();
 
-  const trimUser = username.trim().toLowerCase();
-  const trimPass = password.trim();
-
+  // Validate inputs BEFORE making any network call so error shows instantly
   if (!trimUser || !trimPass) {
     return { success: false, error: 'Ingresa usuario y contraseña.' };
   }
 
-  const registeredUsers = JSON.parse(localStorage.getItem('wkw_registered_users')) || [];
-  const allUsers = [...USERS, ...registeredUsers];
+  try {
+    // Sync registered users from Firebase (with timeout — never blocks > 4s)
+    await syncUsersFromFirebase();
 
-  const found = allUsers.find(u => u.username === trimUser && u.password === trimPass);
+    const registeredUsers = JSON.parse(localStorage.getItem('wkw_registered_users')) || [];
+    const allUsers = [...USERS, ...registeredUsers];
 
-  if (!found) {
-    return { success: false, error: 'Usuario o contraseña incorrectos.' };
+    const found = allUsers.find(u =>
+      u.username === trimUser && u.password === trimPass
+    );
+
+    if (!found) {
+      return { success: false, error: 'Usuario o contraseña incorrectos.' };
+    }
+
+    // Guardar sesión
+    const session = {
+      username: found.username,
+      role: found.role,
+      displayName: found.displayName,
+      loginTime: Date.now()
+    };
+    sessionStorage.setItem('wkw_session', JSON.stringify(session));
+
+    return { success: true, user: session };
+  } catch (err) {
+    console.error('Error inesperado en login:', err);
+    return { success: false, error: 'Error al iniciar sesión. Intenta de nuevo.' };
   }
-
-  // Guardar sesión
-  const session = {
-    username: found.username,
-    role: found.role,
-    displayName: found.displayName,
-    loginTime: Date.now()
-  };
-  sessionStorage.setItem('wkw_session', JSON.stringify(session));
-
-  return { success: true, user: session };
 }
 
 /**

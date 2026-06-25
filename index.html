@@ -279,13 +279,16 @@
           <p class="section-subtitle" style="margin-bottom: 0;">Agrega, edita y administra tu catálogo de productos.</p>
         </div>
         <div class="view-toggle-container">
-          <button id="btnVistaTabla" class="btn-toggle active" onclick="cambiarVistaProductos('tabla')">
-            <i class="fa-solid fa-table-list"></i> Tabla
-          </button>
-          <button id="btnVistaGaleria" class="btn-toggle" onclick="cambiarVistaProductos('galeria')">
-            <i class="fa-solid fa-table-cells"></i> Galería
-          </button>
-        </div>
+  <button id="btnVistaTabla" class="btn-toggle active" onclick="cambiarVistaProductos('tabla')">
+    <i class="fa-solid fa-table-list"></i> Tabla
+  </button>
+  <button id="btnVistaGaleria" class="btn-toggle" onclick="cambiarVistaProductos('galeria')">
+    <i class="fa-solid fa-table-cells"></i> Galería
+  </button>
+  <button id="btnVistaCategoria" class="btn-toggle" onclick="cambiarVistaProductos('categoria')">
+    <i class="fa-solid fa-th-large"></i> Categoría
+  </button>
+</div>
       </div>
 
       <!-- Aviso para usuarios con solo lectura -->
@@ -301,18 +304,21 @@
             <input type="text" id="nombreProducto" placeholder="Ej: Laptop Asus ROG">
           </div>
           <div class="form-group">
-            <label for="categoriaProducto">Categoría</label>
-            <select id="categoriaProducto">
-              <option value="camaras_ip">Cámaras IP</option>
-              <option value="camaras_analogicas">Cámaras Analógicas HD</option>
-              <option value="grabadores">Grabadores (DVR/NVR)</option>
-              <option value="discos_duros">Discos Duros</option>
-              <option value="switches">Switches de Red</option>
-              <option value="poe">Equipos PoE</option>
-              <option value="redes">Redes / Conectividad</option>
-              <option value="otros">Otros</option>
-            </select>
-          </div>
+          <label for="categoriaProducto">Categoría</label>
+          <select id="categoriaProducto">
+            <option value="camaras_ip">Cámaras IP</option>
+            <option value="camaras_analogicas">Cámaras Analógicas HD</option>
+            <option value="grabadores">Grabadores (DVR/NVR)</option>
+            <option value="discos_duros">Discos Duros</option>
+            <option value="switches">Switches de Red</option>
+            <option value="poe">Equipos PoE</option>
+            <option value="redes">Redes / Conectividad</option>
+            <option value="otros">Otros</option>
+          </select>
+          <button id="btnNuevaCategoria" class="admin-only btn btn-primary" style="margin-top:5px;">Crear Nueva Categoría</button>
+<input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="margin-top:5px; padding: 5px; font-size: 0.85rem;" />
+<button class="admin-only btn btn-secondary" id="btnImportarProductos" style="margin-top:5px; margin-left:5px;" onclick="importarProductos()">Importar Productos</button>
+        </div>
           <div class="form-group">
             <label for="precioProducto">Precio Unitario (RD$)</label>
             <input type="number" id="precioProducto" placeholder="0.00" min="0" step="any">
@@ -325,7 +331,7 @@
             <label for="imagenProducto">Imagen (Opcional)</label>
             <input type="file" id="imagenProducto" accept="image/*" style="padding: 7px 12px; font-size: 0.85rem;">
           </div>
-          <button id="btnAgregarProducto" onclick="agregarProducto()" style="width: 100%;">
+          <button id="btnAgregarProducto" class="admin-only" onclick="agregarProducto()" style="width: 100%;">
             <i class="fa-solid fa-circle-plus"></i> Agregar
           </button>
         </div>
@@ -348,9 +354,12 @@
         </table>
       </div>
 
-      <div id="galeriaProductos" class="product-grid oculto">
-        <!-- Dinámico desde JS -->
-      </div>
+        <div id="galeriaProductos" class="product-grid oculto">
+          <!-- Dinámico desde JS -->
+        </div>
+        <div id="categoriaProductos" class="product-grid oculto">
+          <!-- Vista por categoría (próximamente) -->
+        </div>
     </section>
 
     <!-- Sección: Clientes -->

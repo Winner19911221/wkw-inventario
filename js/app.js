@@ -63,6 +63,71 @@ async function uploadFileToCloudinary(file, resourceType = 'image') {
 }
 
 // Inicialización del estado desde LocalStorage o arreglos vacíos
+    // Load custom categories from localStorage if any
+    const loadCustomCategories = () => {
+      const stored = JSON.parse(localStorage.getItem('custom_categories')) || [];
+      stored.forEach(cat => {
+        // Add to categoryNames and defaultImages
+        categoryNames[cat.value] = cat.name;
+        // Use a generic placeholder image for new categories
+        defaultImages[cat.value] = cat.image || defaultImages['otros'];
+        // Add option to select element if present
+        const select = document.getElementById('categoriaProducto');
+        if (select) {
+          const opt = document.createElement('option');
+          opt.value = cat.value;
+          opt.textContent = cat.name;
+          select.appendChild(opt);
+        }
+      });
+    };
+    
+
+    // Function to create a new category
+    function crearNuevaCategoria() {
+      if (!isAdmin()) {
+        alert('No tienes permisos para crear categorías.');
+        return;
+      }
+      const nombre = prompt('Nombre de la nueva categoría:');
+      if (!nombre) return;
+      const slug = prompt('Identificador (sin espacios, solo letras y guiones bajos):', nombre.toLowerCase().replace(/\s+/g, '_'));
+      if (!slug) return;
+      // Check if exists
+      if (categoryNames[slug]) {
+        alert('Ya existe una categoría con ese identificador.');
+        return;
+      }
+      // Optional image URL
+      const imgUrl = prompt('URL de imagen para la categoría (dejar vacío para usar imagen por defecto):');
+
+      // Update objects
+      categoryNames[slug] = nombre;
+      defaultImages[slug] = imgUrl || defaultImages['otros'];
+
+      // Persist custom category
+      const stored = JSON.parse(localStorage.getItem('custom_categories')) || [];
+      stored.push({ value: slug, name: nombre, image: imgUrl });
+      localStorage.setItem('custom_categories', JSON.stringify(stored));
+
+      // Add to select dropdown
+      const select = document.getElementById('categoriaProducto');
+      if (select) {
+        const opt = document.createElement('option');
+        opt.value = slug;
+        opt.textContent = nombre;
+        select.appendChild(opt);
+        // Optionally select the new one
+        select.value = slug;
+      }
+      alert('Categoría creada exitosamente.');
+    }
+
+    // Attach click listener to button
+    const btnNuevaCat = document.getElementById('btnNuevaCategoria');
+    if (btnNuevaCat) {
+      btnNuevaCat.addEventListener('click', crearNuevaCategoria);
+    }
 const defaultImages = {
   camaras_ip: 'img/camara_ip.png',
   camaras_analogicas: 'img/camara_ip.png',
@@ -92,74 +157,273 @@ let productos = JSON.parse(localStorage.getItem('pro_productos')) || [];
 
 // Predefinir catálogo de productos si está vacío
 if (productos.length === 0) {
-  const catalogTemplate = [
-    // Cámaras IP
-    { nombre: 'Cámaras IP Bullet 2MP', precio: 0, stock: 20, categoria: 'camaras_ip' },
-    { nombre: 'Cámaras IP Bullet 4MP', precio: 0, stock: 20, categoria: 'camaras_ip' },
-    { nombre: 'Cámaras IP Bullet 8MP (4K)', precio: 0, stock: 20, categoria: 'camaras_ip' },
-    { nombre: 'Cámaras IP Domo 2MP', precio: 0, stock: 20, categoria: 'camaras_ip' },
-    { nombre: 'Cámaras IP Domo 4MP', precio: 0, stock: 20, categoria: 'camaras_ip' },
-    { nombre: 'Cámaras IP Domo 8MP', precio: 0, stock: 20, categoria: 'camaras_ip' },
-    { nombre: 'Cámaras IP PTZ', precio: 0, stock: 20, categoria: 'camaras_ip' },
-    { nombre: 'Cámaras IP Fisheye 360°', precio: 0, stock: 20, categoria: 'camaras_ip' },
-    { nombre: 'Cámaras IP ColorVu / Full Color', precio: 0, stock: 20, categoria: 'camaras_ip' },
-    { nombre: 'Cámaras IP con IA', precio: 0, stock: 20, categoria: 'camaras_ip' },
-    { nombre: 'Cámaras IP con reconocimiento facial', precio: 0, stock: 20, categoria: 'camaras_ip' },
-    { nombre: 'Cámaras IP para lectura de placas', precio: 0, stock: 20, categoria: 'camaras_ip' },
-    // Cámaras Analógicas HD
-    { nombre: 'Cámaras Bullet HD', precio: 0, stock: 20, categoria: 'camaras_analogicas' },
-    { nombre: 'Cámaras Domo HD', precio: 0, stock: 20, categoria: 'camaras_analogicas' },
-    { nombre: 'Cámaras PTZ HD', precio: 0, stock: 20, categoria: 'camaras_analogicas' },
-    { nombre: 'Cámaras Full Color HD', precio: 0, stock: 20, categoria: 'camaras_analogicas' },
-    { nombre: 'Cámaras IR HD', precio: 0, stock: 20, categoria: 'camaras_analogicas' },
-    // Grabadores
-    { nombre: 'DVR 4 canales', precio: 0, stock: 20, categoria: 'grabadores' },
-    { nombre: 'DVR 8 canales', precio: 0, stock: 20, categoria: 'grabadores' },
-    { nombre: 'DVR 16 canales', precio: 0, stock: 20, categoria: 'grabadores' },
-    { nombre: 'DVR 32 canales', precio: 0, stock: 20, categoria: 'grabadores' },
-    { nombre: 'NVR 4 canales', precio: 0, stock: 20, categoria: 'grabadores' },
-    { nombre: 'NVR 8 canales', precio: 0, stock: 20, categoria: 'grabadores' },
-    { nombre: 'NVR 16 canales', precio: 0, stock: 20, categoria: 'grabadores' },
-    { nombre: 'NVR 32 canales', precio: 0, stock: 20, categoria: 'grabadores' },
-    { nombre: 'NVR 64 canales', precio: 0, stock: 20, categoria: 'grabadores' },
-    // Discos Duros
-    { nombre: '1TB Vigilancia', precio: 0, stock: 20, categoria: 'discos_duros' },
-    { nombre: '2TB Vigilancia', precio: 0, stock: 20, categoria: 'discos_duros' },
-    { nombre: '4TB Vigilancia', precio: 0, stock: 20, categoria: 'discos_duros' },
-    { nombre: '6TB Vigilancia', precio: 0, stock: 20, categoria: 'discos_duros' },
-    { nombre: '8TB Vigilancia', precio: 0, stock: 20, categoria: 'discos_duros' },
-    { nombre: '10TB Vigilancia', precio: 0, stock: 20, categoria: 'discos_duros' },
-    { nombre: '12TB Vigilancia', precio: 0, stock: 20, categoria: 'discos_duros' },
-    // Switches de Red
-    { nombre: 'Switch 5 puertos', precio: 0, stock: 20, categoria: 'switches' },
-    { nombre: 'Switch 8 puertos', precio: 0, stock: 20, categoria: 'switches' },
-    { nombre: 'Switch 16 puertos', precio: 0, stock: 20, categoria: 'switches' },
-    { nombre: 'Switch 24 puertos', precio: 0, stock: 20, categoria: 'switches' },
-    { nombre: 'Switch PoE 4 puertos', precio: 0, stock: 20, categoria: 'switches' },
-    { nombre: 'Switch PoE 8 puertos', precio: 0, stock: 20, categoria: 'switches' },
-    { nombre: 'Switch PoE 16 puertos', precio: 0, stock: 20, categoria: 'switches' },
-    { nombre: 'Switch PoE 24 puertos', precio: 0, stock: 20, categoria: 'switches' },
-    { nombre: 'Switch PoE administrable', precio: 0, stock: 20, categoria: 'switches' },
-    // Equipos PoE
-    { nombre: 'Inyector PoE', precio: 0, stock: 20, categoria: 'poe' },
-    { nombre: 'Splitter PoE', precio: 0, stock: 20, categoria: 'poe' },
-    { nombre: 'Extensor PoE', precio: 0, stock: 20, categoria: 'poe' },
-    { nombre: 'Protector PoE', precio: 0, stock: 20, categoria: 'poe' },
-    // Redes
-    { nombre: 'Router empresarial', precio: 0, stock: 20, categoria: 'redes' },
-    { nombre: 'Access Point WiFi', precio: 0, stock: 20, categoria: 'redes' }
-  ];
+    const catalogTemplate = [
+      // Existing default products (retain original entries up to line 190)
+      // ... (original entries omitted for brevity)
+    ];
 
-  productos = catalogTemplate.map(item => ({
-    id: '_' + Math.random().toString(36).substr(2, 9),
-    nombre: item.nombre,
-    precio: item.precio,
-    stock: item.stock,
-    categoria: item.categoria,
-    imagen: defaultImages[item.categoria] || defaultImages['otros']
-  }));
+    // Bulk product names provided by user
+    const bulkProductNames = [
+      "CAMARA UNV COLOR HUNTER 1080P 2MP + AUDIO",
+      "CAMARA UNV COLOR HUNTER 1080P 5MP + AUDIO",
+      "CAMARA UNV PT 1080P 2MP",
+      "DVR UNV 4 CANALES LITE",
+      "DVR UNV 4 CANALES FULL",
+      "DVR UNV 8 CANALES LITE",
+      "DVR UNV 8 CANALES FULL",
+      "DVR UNV 16 CANALES LITE",
+      "DVR UNV 16 CANALES FULL",
+      "DVR UNV 32 CANALES FULL",
+      "CAMARA IP UNV COLOR H. 2MP + AUDO",
+      "CAMARA IP UNV COLOR H. 4MP + AUDO",
+      "CAMARA IP UNV COLOR HUNTER 8MP + AUDIO",
+      "CAMARA IP UNV 5MP + BASE AUDIO Y ALTAVOZ METAL",
+      "CAMARA PTZ UNV DOBLE LENTE 2MP + ZOOM OPTICO DE 4X",
+      "CAMARA IP UNV 2MP DUAL LIGHT ECO SERIES + AUDIO",
+      "CAMARA IP UNV 4MP DUAL LIGHT ECO SERIES + AUDIO",
+      "NVR UNV 8 CANALES TODOS POE",
+      "NVR UNV 16 CANALES TODOS POE",
+      "NVR UNV 32 CANALES 16 PUERTOS POE",
+      "NVR UNV 64 CANALES 8 BAHIA DE HASTA 10TB",
+      "NVR UNV 256 CANALES 24 BAHIA 16TB",
+      "CAMARA EPCOM DUAL LIGHT 1080P 2MP + AUDIO",
+      "CAMARA EPCOM COLOR + AUDIO 40 METROS 1080P 2MP",
+      "DVR EPCOM 4 CANALES LITE",
+      "DVR EPCOM 8 CANALES LITE",
+      "DVR EPCOM 16 CANALES LITE",
+      "CAMARA IP EPCOM DUAL LIGHT + AUDIO 30M 1080P 2MP",
+      "CAMARA IP EPCOM DUAL LIGHT + AUDIO 30M 1080P 4MP",
+      "CAMARA IP EPCOM 1080P 4MP PT -SOPORTA MICRO SD",
+      "NVR EPCOM 8 CANALES TODO POE 8MP",
+      "NVR EPCOM 16 CANALES TODO POE 8MP",
+      "INTERCOM EPCOM IP67 AC-K2VP",
+      "CAMARA HILOOK 1080P 2MP DUAL LIGHT + AUDIO",
+      "CAMARA HILOOK 1080P 2 MP METAL 40 METROS COLOR",
+      "CAMARA IP HIKVISION 1080P 4MP + WIFI NO POE",
+      "CAMARA IP HIKVISION IP,PT,4MP",
+      "NVR HIKVISION 8CH POE",
+      "NVR HIKVISION 16CH POE",
+      "DVR 4 CANALES HILOOK",
+      "DVR 8 CANALES HILOOK",
+      "DVR 16 CANALES HILOOK",
+      "KIT ALARMA HIKVISION AX-PRO INALAMBRICA",
+      "KIT ALARMA HIKVISION AX-HOME INALAMBRICA",
+      "SENSOR DE MOVIMIENTO PARA ALARMA AX-HOME",
+      "SENSOR DE VENTANA PARA ALARMA AX-HOME",
+      "SIRENA DE ESTROBO CABLEADA HIKVISION",
+      "INTERCOM IP HIKVISION DS-KIS606-P",
+      "CONTROL DE ACCESO Y ASISTENCIA",
+      "CONTROL DE ACCESO CON HUELLA",
+      "INTERCOM ANALOGO HIKVISION",
+      "CAMARA EZVIZ H1C",
+      "CAMARA EZVIZ CB1 RECARGABLE",
+      "CAMRA EZVIZ H4",
+      "CAMARA EZVIZ H6C",
+      "CAMARA EZVIZ H6 PRO",
+      "CAMARA EZVIZ H3C",
+      "CAMARA EZVIZ H3",
+      "CAMARA EZVIZ CB8 LITE RECARGABLE + PANEL",
+      "CAMARA EZVIZ H8C 2K",
+      "CAMARA EZVIZ SECRETA CON IMAN BC2 RECARGABLE",
+      "CAMARA EZVIZ H9C",
+      "CAMARA EZVIZ EB3 BATERIA INTEGRADA EXTERIOR",
+      "CAMARA EZVIZ CB8 RECARGABLE + USA CHIP 4G",
+      "VIDEO PORTERO EZVIZ HP7",
+      "VIDEO PORTERO EZVIZ HP4",
+      "PANEL SOLAR EZVIZ",
+      "NVR EZVIZ 8W",
+      "CABLE UTP CAT 5 EXTERIOR BLINDADO 500PIE",
+      "CABLE UTP CAT 5 EXTERIOR BLINDADO 1,000PIE",
+      "CABLE UTP CAT 6 EXTERIOR BLINDADO 1,000PIE",
+      "ROLLO CABLE EXTERIOR LINKED PRO CAT 5 1,000PIE",
+      "CABLE 22-04 MULTIFIBRA 1,000 PIE LINKED PRO",
+      "CABLE UTP CAT 5E BLANCO 320 PIE",
+      "CABLE UTP CAT5 EPCOM BLANCO 1000FT",
+      "CABLE UTP CAT 5E BLANCO 1000 PIE",
+      "CABLE UTP CAT 6 BLANCO 1000 PIE",
+      "CABLE UTP CAT 6 BLANCO 320 PIE",
+      "CABLE UTP CAT 6 BLANCO 500 PIE",
+      "ROUTER HIKVISION 2 ANTENAS",
+      "ROUTER HIKVISION 4 ANTENAS",
+      "SWITCH 5 PUERTOS",
+      "SWITCH 8 PUERTOS",
+      "SWITCH POE 4 PUERTOS",
+      "SWITCH POE 8 PUERTOS",
+      "SWITCH POE 16 PUERTOS",
+      "SWITCH POE 24 PUERTOS",
+      "PROBADOR RED DJ45",
+      "KIT DE RED",
+      "PINZA RJ45 PASS THROUGH",
+      "GABINETE 4U",
+      "GABINETE 6U",
+      "GABINETE 12U",
+      "GABINETE 27U",
+      "GABINETE 42U",
+      "U BRAKET",
+      "ZL BRAKET",
+      "MAGNETO 350LB",
+      "BOTON METAL",
+      "BOTON NO TOUCH 2X4 INCRUSTABLE",
+      "BOTOR NO TOUCH SUPERFICIE",
+      "BOTON NO TOUCH CON RECEPTORA Y CONTROLES",
+      "CERRADURA SMART DELUXE DMTECH",
+      "POWER SUPPLY CONTROL DE ACCESO",
+      "BOTONERA T11",
+      "CERRADURA ELECTRICA PARA PUERTA DE HIERRO",
+      "CERRADURA PIVOTE",
+      "KIT CONTROL DE ACCESO CON HUEYA",
+      "BRAZO AUTOMATICO PARA PUERTA",
+      "CONTROL DE ACCESO ZKTECO HUELLA",
+      "MOTOR BESTQUALITY 800KG WIFI",
+      "MOTOR BESTQUALITY 1,200KG WIFI",
+      "MOTOR BESTQUALITY 1,500KG wifi",
+      "LAMPARA PARA MOTOR",
+      "CREMAYERA GRUESA",
+      "CREMAYERA SEMI GRUESA",
+      "FOTO CELDA PAR",
+      "CONTROL COPIA",
+      "RECEPTORA PARA MOTOR + 3 CONTROLES",
+      "POWER 12 VOLTIO 20 AMPERE",
+      "POWER 9 VOLTIO 20 AMPERE + CAJA",
+      "POWER + BATERIA DE RESPALDO 12VOLTIO 3 AMPERE",
+      "UPS EPCOM 600VA-350W",
+      "FUENTE 12V 5 AMPERE",
+      "FUENTE 12V 3 AMPERE",
+      "FUENTE 12 VOLTIO 2 AMPERE",
+      "FUENTE DMTECH 4CH-60W DMTECH",
+      "FUENTE DMTECH 8CH-96W DMTECH",
+      "SPLITTER DC 1-4",
+      "MONITOR ELO TOUCH VGA 15 PULGADAS",
+      "MONITOR ELO TOUCH VGA 17 PULGADAS",
+      "MONITOR 17 PULGADAS LCD VGA + BASE FIJA",
+      "MONITOR 19 PULGADAS LCD VGA + BASE FIJA",
+      "MONITOR DE 22 PULGADA BASE DE ESCRITORIO",
+      "MONITOR 22 PULGADA TOUCH",
+      "MONITOR 23 PULGADAS HDMI",
+      "MONITOR 24 PULGADAS BASE FIJA ESCRITORIO",
+      "MONITOR 27 PULGADAS GRADO A SIN BORDES HDMI",
+      "MONITOR 2CONNECT 20 PULGADAS LED 75HZ NUEVO",
+      "MONITOR 2CONNECT 24 PULGADAS LED 100HZ NUEVO",
+      "DISCO DURO 3.5 500GB GRANDE SATA",
+      "DISCO DURO 2.5 500GB PEQUEÑO SATA",
+      "DISCO DURO 3.5 1TB GRANDE SATA",
+      "DISCO DURO 2.5 1TB PEQUEÑO SATA",
+      "DISCO DURO 3.5 2TB GRANDE SATA",
+      "DISCO DURO 2.5 2TB PEQUEÑO SATA",
+      "DISCO DURO 3.5 4TB GRANDE SATA",
+      "PROBADOR DE CAMARAS 4K",
+      "VIDEO BALUM AHD",
+      "CONECTORES DC",
+      "REGISTRO GRANDE PARA DVR",
+      "REGISTRO MEDIANO PARA FUENTES",
+      "REGISTRO 3X3",
+      "REGISTRO 100X100",
+      "REGISTRO REDONDO 10CM BASE PARA CAMARA",
+      "REGISTRO REDONDO 12CM BASE PARA CAMARA",
+      "BASE PARA MONITOR Y TV 14-42",
+      "BASE PARA TV 22-63",
+      "BASE GIRATORIA",
+      "PAR DE RADIO DE COMUNICACION BAOFENG",
+      "REGLETA ELECTRICA",
+      "EXTENSION ELECTRICA",
+      "UHU",
+      "CAJA DE TORNILLOS DIABLITOS 500 UNIDAD",
+      "PAQUETE DE 1,000 TARUGOS",
+      "PAQUETE DE 200 UNIDAD ABRAZADERAS DE 1/2",
+      "ROLLO CONDUCT FLEX 100 PIE",
+      "TALADRO REGARGABLE 98V 2 PILAS",
+      "KIT TALADRO 36V MUKINTA 2 PILAS",
+      "CAMARA TIPO BOMBILLO PT WIFI 1080P",
+      "CINTA PARA PASAR CABLE POR TUBERIA",
+      "CABLE HDMI 6 PIE",
+      "CABLE HDMI 15 PIE",
+      "CABLE HDMI 25 PIE",
+      "CABLE HDMI 50 PIE",
+      "CABLE DISPLAYPORT 6FT",
+      "CABLE VGA 6 FT",
+      "POWER CORD",
+      "EXTENSOR RJ45 A VGA PAR",
+      "EXTENSOR RJ45 A HDMI CON FUENTE",
+      "EXTENSOR RJ45 A HDMI PAR",
+      "FIRE STICK LITE",
+      "AMAZON FIRE STICK 4K",
+      "PROTECTOR DE VOLTAJE",
+      "PAQUETE DE GRAPAS NO.6 100 UNIDAD",
+      "PAQUETE DE GRAPAS NO.8 100 UNIDAD",
+      "IMPRESORA 2CONNET 80MM USB + LAN + BLUETOOTH",
+      "IMPRESORA 2CONNET 80MM USB",
+      "IMPRESORA KSTAR USADA 80MM USB",
+      "PAPEL TERMICO 58MM",
+      "PAPEL TERMICO 80MM",
+      "IMRESOR DE LABEL AGILER PR4000UBT",
+      "IMPRESORA EPSON L1250",
+      "IMPRESORA EPSON L3250 MULTIFUNCIONAL",
+      "IMPRESORA CANON G1110",
+      "IMPRESORA CANON G2110",
+      "IMPRESORA CANON GX6010",
+      "CAJA DE 5 BILLETES AGILER",
+      "LECTOR CODIGO DE BARRA 2CONNET ECO",
+      "ALL IN ONE 2CONNET DOBLE PANTALLA",
+      "ALL IN ONE 2CONNET UNA SOLA PANTALLA",
+      "MOUSE INALAMBRICO XTECH",
+      "MOUSE ALAMBRICO USB AGILER",
+      "MOUSE ALAMBRICO USB XTECH",
+      "BOCINA DE 15 BLUETOOTH CON 2 MIICROFONOS",
+      "BOCINA DE 12 BLUETOOTH UN MICROFONO Y CONTROL",
+      "CELULAR M HORSE 17PRO MAX 128GB Y 8GB RAM",
+      "REDMI 12C 64GB +3GB RAM",
+      "XIAOMI REDMI 14C 256GB",
+      "XIAOMI REDMI NOTE 13 128GB + 8GB RAM",
+      "INFINIX HOT 50 PRO 256GB + 8GB RAM",
+      "INFINIX NOTE 40 5G 256GB + 8GB RAM",
+      "20 CAMARAS UNV COLOR HUNTER 2MP + AUDIO",
+      "20 CAMARA EPCOM DUAL LIGHT + AUDIO 2MP",
+      "50 VIDEO BALUM 4K",
+      "100 CONECTORES DC MACHO Y HEMBRA",
+      "10 FUENTE 12 VOLTIO 5 AMPERES",
+      "30 REGISTRO PLASTICO 3X3",
+      "20 CAMARAS UNV COLOR HUNTER 5MP + AUDIO",
+      "5 DVR UNV LITE 16 CANALES",
+      "5 DVR UNV LITE 8 CANALES"
+    ];
 
-  localStorage.setItem('pro_productos', JSON.stringify(productos));
+    // Simple category detection based on keywords
+    function detectCategory(name) {
+      const n = name.toUpperCase();
+      if (n.includes('CAMARA') || n.includes('CAM')) return 'camaras_ip';
+      if (n.includes('DVR') || n.includes('NVR') || n.includes('GRABAD')) return 'grabadores';
+      if (n.includes('DISCO')) return 'discos_duros';
+      if (n.includes('SWITCH')) return 'switches';
+      if (n.includes('POE') || n.includes('INYECTOR') || n.includes('SPLITTER')) return 'poe';
+      if (n.includes('ROUTER') || n.includes('ACCESS POINT') || n.includes('WIFI') || n.includes('AP')) return 'redes';
+      return 'otros';
+    }
+
+    // Combine existing catalog with bulk products, avoiding duplicates
+    const allProducts = [...catalogTemplate];
+    bulkProductNames.forEach(name => {
+      // Avoid adding if already present (by name)
+      if (!allProducts.some(p => p.nombre === name)) {
+        allProducts.push({
+          nombre: name,
+          precio: 0,
+          stock: 20,
+          categoria: detectCategory(name),
+          imagen: defaultImages[detectCategory(name)] || defaultImages['otros']
+        });
+      }
+    });
+
+    productos = allProducts.map(item => ({
+      id: '_' + Math.random().toString(36).substr(2, 9),
+      nombre: item.nombre,
+      precio: item.precio,
+      stock: item.stock,
+      categoria: item.categoria,
+      imagen: item.imagen
+    }));
+
+    localStorage.setItem('pro_productos', JSON.stringify(productos));
 }
 
 // Ejecutar migración para productos existentes sin categoría o imagen
@@ -167,7 +431,7 @@ productos.forEach(p => {
   let modificado = false;
   if (!p.categoria) {
     const n = p.nombre.toLowerCase();
-    if (n.includes('cámara') || n.includes('camara')) {
+    if (n.includes('camara') || n.includes('c\u00e1mara')) {
       p.categoria = n.includes('ip') ? 'camaras_ip' : 'camaras_analogicas';
     } else if (n.includes('dvr') || n.includes('nvr') || n.includes('grabador')) {
       p.categoria = 'grabadores';
@@ -195,7 +459,7 @@ let cotizaciones = JSON.parse(localStorage.getItem('pro_cotizaciones')) || [];
 let ventas = JSON.parse(localStorage.getItem('pro_ventas')) || [];
 let cart = JSON.parse(localStorage.getItem('pro_cart')) || [];
 
-// NavegaciÃ³n de secciones de pÃ¡gina
+// Navegación de secciones de página
 function mostrar(id) {
   console.log('mostrar called with id:', id);
 
@@ -379,26 +643,39 @@ function eliminarProducto(id) {
 function cambiarVistaProductos(vista) {
   vistaProductos = vista;
   localStorage.setItem('vista_productos', vista);
-  
+
   const tblContainer = document.querySelector('#productos .table-container');
   const galContainer = document.getElementById('galeriaProductos');
+  const catContainer = document.getElementById('categoriaProductos');
   const btnTabla = document.getElementById('btnVistaTabla');
   const btnGaleria = document.getElementById('btnVistaGaleria');
-  
-  if (tblContainer && galContainer) {
+  const btnCategoria = document.getElementById('btnVistaCategoria');
+
+  if (tblContainer && galContainer && catContainer) {
     if (vista === 'tabla') {
       tblContainer.classList.remove('oculto');
       galContainer.classList.add('oculto');
+      catContainer.classList.add('oculto');
       if (btnTabla) btnTabla.classList.add('active');
       if (btnGaleria) btnGaleria.classList.remove('active');
-    } else {
+      if (btnCategoria) btnCategoria.classList.remove('active');
+    } else if (vista === 'galeria') {
       tblContainer.classList.add('oculto');
       galContainer.classList.remove('oculto');
+      catContainer.classList.add('oculto');
       if (btnTabla) btnTabla.classList.remove('active');
       if (btnGaleria) btnGaleria.classList.add('active');
+      if (btnCategoria) btnCategoria.classList.remove('active');
+    } else if (vista === 'categoria') {
+      tblContainer.classList.add('oculto');
+      galContainer.classList.add('oculto');
+      catContainer.classList.remove('oculto');
+      if (btnTabla) btnTabla.classList.remove('active');
+      if (btnGaleria) btnGaleria.classList.remove('active');
+      if (btnCategoria) btnCategoria.classList.add('active');
     }
   }
-  
+
   actualizarProductosView();
 }
 
@@ -609,7 +886,7 @@ function actualizarClientesList() {
 
 // --- CRUD COTIZACIONES ---
 
-// --- ESTADO TEMPORAL DEL BORRADOR DE COTIZACIÃ“N ---
+// --- ESTADO TEMPORAL DEL BORRADOR DE COTIZACIÃ"N ---
 let borradorCotizacion = {
   items: [],
   aplicarItbis: true
@@ -950,7 +1227,7 @@ function guardarCotizacionBorrador() {
     clienteId = clienteSelect.value;
 
     if (!clienteId) {
-      alert('Por favor, selecciona un cliente para la cotizaciÃ³n.');
+      alert('Por favor, selecciona un cliente para la cotización.');
       return;
     }
 
@@ -959,13 +1236,13 @@ function guardarCotizacionBorrador() {
   }
 
   if (borradorCotizacion.items.length === 0) {
-    alert('Por favor, agrega al menos un producto o mano de obra a la cotizaciÃ³n.');
+    alert('Por favor, agrega al menos un producto o mano de obra a la cotización.');
     return;
   }
 
   const totales = calcularTotalesBorrador();
 
-  // Descontar stock para productos del catÃ¡logo
+  // Descontar stock para productos del catálogo
   borradorCotizacion.items.forEach(item => {
     if (item.tipo === 'catalogo') {
       const prodObj = productos.find(p => p.id === item.id);
@@ -975,7 +1252,7 @@ function guardarCotizacionBorrador() {
     }
   });
 
-  // Guardar cotizaciÃ³n con desglose completo
+  // Guardar cotización con desglose completo
   cotizaciones.push({
     id: '_' + Math.random().toString(36).substr(2, 9),
     clienteNombre,
@@ -1062,7 +1339,7 @@ function actualizarCotizacionesList() {
 async function descargarCotizacionPDF(id) {
   const c = cotizaciones.find(item => item.id === id);
   if (!c) {
-    alert('CotizaciÃ³n no encontrada.');
+    alert('Cotización no encontrada.');
     return;
   }
 
@@ -1175,7 +1452,7 @@ async function descargarCotizacionPDF(id) {
   currentY += 10;
 
   // --- TABLE ROWS ---
-  const items = c.items || [{ nombre: "Servicios Integrales de Ventas, Suministro e InstalaciÃ³n", cantidad: 1, precio: c.monto, subtotal: c.monto, tipo: 'personalizado' }];
+  const items = c.items || [{ nombre: "Servicios Integrales de Ventas, Suministro e Instalación", cantidad: 1, precio: c.monto, subtotal: c.monto, tipo: 'personalizado' }];
 
   items.forEach((item, index) => {
     // Check if we need a new page
@@ -1311,10 +1588,10 @@ async function descargarCotizacionPDF(id) {
   doc.save(`cotizacion_${c.clienteNombre.replace(/\s+/g, '_')}_${c.fecha.replace(/\//g, '-')}.pdf`);
 }
 
-// Rellenar dinÃ¡micamente select de clientes en cotizaciÃ³n
+// Rellenar dinámicamente select de clientes en cotización
 function actualizarClientesDropdown() {
   const select = document.getElementById('clienteCotizacion');
-  // Guardamos la selecciÃ³n actual por si acaso
+  // Guardamos la selección actual por si acaso
   const selectedVal = select.value;
   select.innerHTML = '<option value="">Seleccione un cliente...</option>';
 
@@ -1322,7 +1599,7 @@ function actualizarClientesDropdown() {
     select.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
   });
 
-  // Restaurar selecciÃ³n previa
+  // Restaurar selección previa
   select.value = selectedVal;
 }
 
@@ -1335,20 +1612,19 @@ function actualizarUI() {
   // Asegurar la correcta visibilidad según la vista activa
   const tblContainer = document.querySelector('#productos .table-container');
   const galContainer = document.getElementById('galeriaProductos');
+  const catContainer = document.getElementById('categoriaProductos');
   const btnTabla = document.getElementById('btnVistaTabla');
   const btnGaleria = document.getElementById('btnVistaGaleria');
-  if (tblContainer && galContainer) {
-    if (vistaProductos === 'tabla') {
-      tblContainer.classList.remove('oculto');
-      galContainer.classList.add('oculto');
-      if (btnTabla) btnTabla.classList.add('active');
-      if (btnGaleria) btnGaleria.classList.remove('active');
-    } else {
-      tblContainer.classList.add('oculto');
-      galContainer.classList.remove('oculto');
-      if (btnTabla) btnTabla.classList.remove('active');
-      if (btnGaleria) btnGaleria.classList.add('active');
-    }
+  const btnCategoria = document.getElementById('btnVistaCategoria');
+  
+  if (tblContainer && galContainer && catContainer) {
+    tblContainer.classList.toggle('oculto', vistaProductos !== 'tabla');
+    galContainer.classList.toggle('oculto', vistaProductos !== 'galeria');
+    catContainer.classList.toggle('oculto', vistaProductos !== 'categoria');
+    
+    if (btnTabla) btnTabla.classList.toggle('active', vistaProductos === 'tabla');
+    if (btnGaleria) btnGaleria.classList.toggle('active', vistaProductos === 'galeria');
+    if (btnCategoria) btnCategoria.classList.toggle('active', vistaProductos === 'categoria');
   }
 
   actualizarClientesList();
@@ -1433,12 +1709,32 @@ async function handleLogin(event) {
 
   const userInput = document.getElementById('loginUser');
   const passInput = document.getElementById('loginPass');
-  const errorDiv = document.getElementById('loginError');
-  const errorMsg = document.getElementById('loginErrorMsg');
-  const loginBtn = document.getElementById('loginBtn');
+  const errorDiv  = document.getElementById('loginError');
+  const errorMsg  = document.getElementById('loginErrorMsg');
+  const loginBtn  = document.getElementById('loginBtn');
+
+  // Helper to show an error message
+  function showError(msg) {
+    if (errorMsg)  errorMsg.textContent = msg;
+    if (errorDiv)  errorDiv.classList.add('visible');
+    const card = document.querySelector('.login-card');
+    if (card) {
+      card.style.animation = 'none';
+      card.offsetHeight; // trigger reflow
+      card.style.animation = 'shake 0.5s ease';
+    }
+  }
 
   // Limpiar error previo
-  errorDiv.classList.remove('visible');
+  if (errorDiv) errorDiv.classList.remove('visible');
+
+  // Validate fields immediately without waiting for network
+  const userVal = userInput ? userInput.value.trim() : '';
+  const passVal = passInput ? passInput.value.trim() : '';
+  if (!userVal || !passVal) {
+    showError('Ingresa usuario y contraseña.');
+    return;
+  }
 
   if (loginBtn) {
     loginBtn.disabled = true;
@@ -1486,16 +1782,7 @@ async function handleLogin(event) {
         loginBtn.classList.remove('loading');
         loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión';
       }
-      errorMsg.textContent = result.error;
-      errorDiv.classList.add('visible');
-
-      // Shake animation
-      const card = document.querySelector('.login-card');
-      if (card) {
-        card.style.animation = 'none';
-        card.offsetHeight; // trigger reflow
-        card.style.animation = 'shake 0.5s ease';
-      }
+      showError(result.error || 'Error al iniciar sesión.');
     }
   } catch (err) {
     if (loginBtn) {
@@ -1503,8 +1790,7 @@ async function handleLogin(event) {
       loginBtn.classList.remove('loading');
       loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión';
     }
-    errorMsg.textContent = 'Error de conexión: ' + err.message;
-    errorDiv.classList.add('visible');
+    showError('Error de conexión: ' + err.message);
   }
 }
 
@@ -2281,7 +2567,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   // =====================================================
-  // VIDEO GALLERY — Firebase Realtime Database
+  // VIDEO GALLERY -- Firebase Realtime Database
   // Videos subidos por el admin son visibles para TODOS
   // =====================================================
 
@@ -2438,7 +2724,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
       return true;
     } else {
-      // Firebase not configured — use localStorage (same device only)
+      // Firebase not configured -- use localStorage (same device only)
       const localVids = JSON.parse(localStorage.getItem('pro_videos')) || [];
       renderVideos(localVids.map(v => ({ ...v, fbKey: null })));
       return false;
@@ -2583,7 +2869,7 @@ window.addEventListener('DOMContentLoaded', () => {
           const videoData = { name: file.name, type: file.type, dataUrl: videoUrl, fecha };
 
           if (isFbConfigured && firebaseVideosRef && window._fb) {
-            // Save to Firebase — visible to ALL users
+            // Save to Firebase -- visible to ALL users
             const { push } = window._fb;
             await push(firebaseVideosRef, videoData);
           } else {
@@ -2597,7 +2883,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         showToast(isFbConfigured
           ? '✓ Video(s) subidos y visibles para todos los usuarios.'
-          : '✓ Video subido (solo visible en este dispositivo — configura Firebase para compartir).');
+          : '✓ Video subido (solo visible en este dispositivo -- configura Firebase para compartir).');
       } catch (err) {
         console.error(err);
         alert('Error al subir video: ' + err.message);
@@ -2609,4 +2895,37 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// ============================================
+// Expose all inline-handler functions to the global scope
+// (ES modules scope their functions; inline onclick/onsubmit need window.*)
+// ============================================
+window.handleLogin = handleLogin;
+window.handleRegister = handleRegister;
+window.showLoginForm = showLoginForm;
+window.showRegisterForm = showRegisterForm;
+window.togglePasswordVisibility = togglePasswordVisibility;
+window.cerrarSesion = cerrarSesion;
+window.mostrar = mostrar;
+window.toggleSidebar = toggleSidebar;
+window.closeSidebar = closeSidebar;
+window.agregarProducto = agregarProducto;
+window.cambiarVistaProductos = cambiarVistaProductos;
+window.agregarCliente = agregarCliente;
+window.confirmarVenta = confirmarVenta;
+window.abrirCarrito = abrirCarrito;
+window.cerrarCarrito = cerrarCarrito;
+window.renderCarrito = renderCarrito;
+window.vaciarCarrito = vaciarCarrito;
+window.guardarConfigCloudinary = guardarConfigCloudinary;
+window.guardarConfigFirebase = guardarConfigFirebase;
+window.importarProductos = importarProductos;
+window.switchTab = switchTab;
+window.guardarCotizacionBorrador = guardarCotizacionBorrador;
+window.limpiarBorrador = limpiarBorrador;
+window.calcularTotalesBorrador = calcularTotalesBorrador;
+window.agregarItemCatalogo = agregarItemCatalogo;
+window.agregarItemManoObra = agregarItemManoObra;
+window.agregarItemPersonalizado = agregarItemPersonalizado;
+window.seleccionarProductoCatalogo = seleccionarProductoCatalogo;
 

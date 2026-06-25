@@ -80,16 +80,20 @@
   z-index: 1;
 }
 
-@keyframes cardEnter {
-  from {
-    opacity: 0;
-    transform: translateY(30px) scale(0.96);
+  @keyframes cardEnter {
+    0% {
+      opacity: 0;
+      transform: translateY(30px) scale(0.95);
+    }
+    60% {
+      opacity: 1;
+      transform: translateY(-5px) scale(1.05);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
 
 /* Logo inside login card */
 .login-logo-wrap {
